@@ -11,7 +11,8 @@ use std::mem::uninitialized;
 use std::fmt;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
-use num_traits::{Zero, One};
+use std::u8;
+use num_traits::{Zero, One, Num};
 
 #[repr(C)]
 pub struct mpq_struct {
@@ -490,5 +491,13 @@ impl One for Mpq {
     #[inline]
     fn one() -> Mpq {
         Mpq::one()
+    }
+}
+
+impl Num for Mpq {
+    type FromStrRadixErr = ParseMpqError;
+    fn from_str_radix(str: &str, radix: u32) -> Result<Mpq, ParseMpqError> {
+        assert!(radix <= u8::MAX as u32);
+        Mpq::from_str_radix(str, radix as u8)
     }
 }

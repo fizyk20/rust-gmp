@@ -9,8 +9,8 @@ use std::str::FromStr;
 use std::error::Error;
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg, Not, Shl, ShlAssign, Shr, ShrAssign, BitXor, BitXorAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Rem, RemAssign};
 use std::ffi::CString;
-use std::{u32, i32};
-use num_traits::{Zero, One};
+use std::{u8, u32, i32};
+use num_traits::{Zero, One, Num};
 
 use ffi::*;
 
@@ -1017,3 +1017,10 @@ impl One for Mpz {
     }
 }
 
+impl Num for Mpz {
+    type FromStrRadixErr = ParseMpzError;
+    fn from_str_radix(str: &str, radix: u32) -> Result<Mpz, ParseMpzError> {
+        assert!(radix <= u8::MAX as u32);
+        Mpz::from_str_radix(str, radix as u8)
+    }
+}

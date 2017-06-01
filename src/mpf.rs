@@ -7,11 +7,12 @@ use std::ffi::CString;
 use std::string::String;
 use std::error::Error;
 use std::fmt;
+use std::i32;
 use super::mpz::mp_bitcnt_t;
 use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
 use super::sign::Sign;
-use num_traits::{Zero, One};
+use num_traits::{Zero, One, Num};
 
 type mp_exp_t = c_long;
 
@@ -420,5 +421,15 @@ impl One for Mpf {
         let mut res = Mpf::new(32);
         res.set_from_si(1);
         res
+    }
+}
+
+impl Num for Mpf {
+    type FromStrRadixErr = ParseMpfError;
+    fn from_str_radix(str: &str, radix: u32) -> Result<Mpf, ParseMpfError> {
+        assert!(radix <= i32::MAX as u32);
+        let mut res = Mpf::new(32);
+        res.set_from_str(str, radix as i32)?;
+        Ok(res)
     }
 }
