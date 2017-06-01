@@ -5,6 +5,8 @@ use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::ffi::CString;
 use std::string::String;
+use std::error::Error;
+use std::fmt;
 use super::mpz::mp_bitcnt_t;
 use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
@@ -35,7 +37,7 @@ extern "C" {
     fn __gmpf_set_z(rop: mpf_ptr, op: mpz_srcptr);
     fn __gmpf_set_q(rop: mpf_ptr, op: mpq_srcptr);
 
-    fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int);
+    fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int) -> c_int;
     fn __gmpf_set_si(rop: mpf_ptr, op: c_long);
     fn __gmpf_get_str(str: *const c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_ptr) -> *mut c_char;
 
@@ -106,10 +108,15 @@ impl Mpf {
         unsafe { __gmpf_set_prec(&mut self.mpf, precision as c_ulong) }
     }
 
-    pub fn set_from_str(&mut self, string: &str, base: i32){
-        let c_str = CString::new(string).unwrap();
+    pub fn set_from_str(&mut self, string: &str, base: i32) -> Result<(), ParseMpfError> {
+        let c_str = CString::new(string).map_err(|_| ParseMpfError { _priv: () })?;
         unsafe {
-            __gmpf_set_str(&mut self.mpf, c_str.as_ptr(), base as c_int);
+            let r = __gmpf_set_str(&mut self.mpf, c_str.as_ptr(), base as c_int);
+            if r == 0 {
+                Ok(())
+            } else {
+                Err(ParseMpfError { _priv: () })
+            }
         }
     }
 
@@ -191,6 +198,27 @@ impl Mpf {
         } else {
             Sign::Negative
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct ParseMpfError {
+    _priv: ()
+}
+
+impl fmt::Display for ParseMpfError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
+impl Error for ParseMpfError {
+    fn description(&self) -> &'static str {
+        "invalid rational number"
+    }
+
+    fn cause(&self) -> Option<&'static Error> {
+        None
     }
 }
 
