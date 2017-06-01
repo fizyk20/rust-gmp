@@ -10,7 +10,7 @@ use std::convert::From;
 use std::mem::uninitialized;
 use std::fmt;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
-use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
+use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use num_traits::{Zero, One};
 
 #[repr(C)]
@@ -250,6 +250,11 @@ macro_rules! div_guard {
             panic!("divide by zero")
         }
     };
+    (Rem, $what: expr) => {
+        if $what.is_zero() {
+            panic!("divide by zero")
+        }
+    };
     ($tr: ident, $what: expr) => {}
 }
 
@@ -319,6 +324,52 @@ impl_oper!(Add, add, AddAssign, add_assign, __gmpq_add);
 impl_oper!(Sub, sub, SubAssign, sub_assign, __gmpq_sub);
 impl_oper!(Mul, mul, MulAssign, mul_assign, __gmpq_mul);
 impl_oper!(Div, div, DivAssign, div_assign, __gmpq_div);
+
+impl Rem<Mpq> for Mpq {
+    type Output = Mpq;
+    #[inline]
+    fn rem(self, other: Mpq) -> Mpq {
+        self.rem(&other)
+    }
+}
+
+impl<'a> Rem<&'a Mpq> for Mpq {
+    type Output = Mpq;
+    #[inline]
+    fn rem(mut self, other: &Mpq) -> Mpq {
+        self.rem_assign(other);
+        self
+    }
+}
+
+impl<'a> Rem<Mpq> for &'a Mpq {
+    type Output = Mpq;
+    #[inline]
+    fn rem(self, other: Mpq) -> Mpq {
+        self.rem(&other)
+    }
+}
+
+impl<'a, 'b> Rem<&'a Mpq> for &'b Mpq {
+    type Output = Mpq;
+    #[inline]
+    fn rem(self, other: &Mpq) -> Mpq {
+        self.clone().rem(other)
+    }
+}
+
+impl<'a> RemAssign<Mpq> for Mpq {
+    #[inline]
+    fn rem_assign(&mut self, other: Mpq) {
+        self.rem_assign(&other)
+    }
+}
+
+impl<'a> RemAssign<&'a Mpq> for Mpq {
+    fn rem_assign(&mut self, other: &Mpq) {
+        *self -= other * Mpq::from(&(&*self / other).floor());
+    }
+}
 
 impl<'b> Neg for &'b Mpq {
     type Output = Mpq;

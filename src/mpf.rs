@@ -2,7 +2,7 @@ use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char};
 use std::mem::uninitialized;
 use std::cmp;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
-use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
+use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::ffi::CString;
 use std::string::String;
 use super::mpz::mp_bitcnt_t;
@@ -301,6 +301,53 @@ impl_oper!(Add, add, AddAssign, add_assign, __gmpf_add);
 impl_oper!(Sub, sub, SubAssign, sub_assign, __gmpf_sub);
 impl_oper!(Mul, mul, MulAssign, mul_assign, __gmpf_mul);
 impl_oper!(Div, div, DivAssign, div_assign, __gmpf_div);
+
+
+impl Rem<Mpf> for Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: Mpf) -> Mpf {
+        self.rem(&other)
+    }
+}
+
+impl<'a> Rem<&'a Mpf> for Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(mut self, other: &Mpf) -> Mpf {
+        self.rem_assign(other);
+        self
+    }
+}
+
+impl<'a> Rem<Mpf> for &'a Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: Mpf) -> Mpf {
+        self.rem(&other)
+    }
+}
+
+impl<'a, 'b> Rem<&'a Mpf> for &'b Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: &Mpf) -> Mpf {
+        self.clone().rem(other)
+    }
+}
+
+impl<'a> RemAssign<Mpf> for Mpf {
+    #[inline]
+    fn rem_assign(&mut self, other: Mpf) {
+        self.rem_assign(&other)
+    }
+}
+
+impl<'a> RemAssign<&'a Mpf> for Mpf {
+    fn rem_assign(&mut self, other: &Mpf) {
+        *self -= other * (&*self / other).floor();
+    }
+}
 
 
 impl<'b> Neg for &'b Mpf {
