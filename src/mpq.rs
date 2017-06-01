@@ -12,7 +12,7 @@ use std::fmt;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::u8;
-use num_traits::{Zero, One, Num};
+use num_traits::{Zero, One, Num, Signed};
 
 #[repr(C)]
 pub struct mpq_struct {
@@ -499,5 +499,31 @@ impl Num for Mpq {
     fn from_str_radix(str: &str, radix: u32) -> Result<Mpq, ParseMpqError> {
         assert!(radix <= u8::MAX as u32);
         Mpq::from_str_radix(str, radix as u8)
+    }
+}
+
+impl Signed for Mpq {
+    fn abs(&self) -> Mpq {
+        self.abs()
+    }
+
+    fn abs_sub(&self, other: &Mpq) -> Mpq {
+        let mut res = self - other;
+        unsafe {
+            __gmpq_abs(&mut res.mpq, &res.mpq);
+        }
+        res
+    }
+
+    fn signum(&self) -> Mpq {
+        Mpq::from(unsafe { __gmpq_cmp_ui(&self.mpq, 0, 1) })
+    }
+
+    fn is_positive(&self) -> bool {
+        unsafe { __gmpq_cmp_ui(&self.mpq, 0, 1) > 0 }
+    }
+
+    fn is_negative(&self) -> bool {
+        unsafe { __gmpq_cmp_ui(&self.mpq, 0, 1) < 0 }
     }
 }

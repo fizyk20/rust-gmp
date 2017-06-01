@@ -12,7 +12,7 @@ use super::mpz::mp_bitcnt_t;
 use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
 use super::sign::Sign;
-use num_traits::{Zero, One, Num};
+use num_traits::{Zero, One, Num, Signed};
 
 type mp_exp_t = c_long;
 
@@ -431,5 +431,33 @@ impl Num for Mpf {
         let mut res = Mpf::new(32);
         res.set_from_str(str, radix as i32)?;
         Ok(res)
+    }
+}
+
+impl Signed for Mpf {
+    fn abs(&self) -> Mpf {
+        self.abs()
+    }
+
+    fn abs_sub(&self, other: &Mpf) -> Mpf {
+        let mut res = self - other;
+        unsafe {
+            __gmpf_abs(&mut res.mpf, &res.mpf);
+        }
+        res
+    }
+
+    fn signum(&self) -> Mpf {
+        let mut res = Mpf::new(self.get_prec());
+        res.set_from_si(unsafe { __gmpf_cmp_ui(&self.mpf, 0) } as i64);
+        res
+    }
+
+    fn is_positive(&self) -> bool {
+        unsafe { __gmpf_cmp_ui(&self.mpf, 0) > 0 }
+    }
+
+    fn is_negative(&self) -> bool {
+        unsafe { __gmpf_cmp_ui(&self.mpf, 0) < 0 }
     }
 }

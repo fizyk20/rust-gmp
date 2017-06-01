@@ -10,7 +10,7 @@ use std::error::Error;
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg, Not, Shl, ShlAssign, Shr, ShrAssign, BitXor, BitXorAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Rem, RemAssign};
 use std::ffi::CString;
 use std::{u8, u32, i32};
-use num_traits::{Zero, One, Num};
+use num_traits::{Zero, One, Num, Signed};
 
 use ffi::*;
 
@@ -1022,5 +1022,31 @@ impl Num for Mpz {
     fn from_str_radix(str: &str, radix: u32) -> Result<Mpz, ParseMpzError> {
         assert!(radix <= u8::MAX as u32);
         Mpz::from_str_radix(str, radix as u8)
+    }
+}
+
+impl Signed for Mpz {
+    fn abs(&self) -> Mpz {
+        self.abs()
+    }
+
+    fn abs_sub(&self, other: &Mpz) -> Mpz {
+        let mut res = self - other;
+        unsafe {
+            __gmpz_abs(&mut res.mpz, &res.mpz);
+        }
+        res
+    }
+
+    fn signum(&self) -> Mpz {
+        Mpz::from(self.mpz._mp_size.signum())
+    }
+
+    fn is_positive(&self) -> bool {
+        self.mpz._mp_size > 0
+    }
+
+    fn is_negative(&self) -> bool {
+        self.mpz._mp_size < 0
     }
 }
