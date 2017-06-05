@@ -725,4 +725,21 @@ mod mpf {
         assert_eq!(&pi.get_str(4, 10, &mut tmp), "3142");
         assert_eq!((-&pi).get_str(4, 10, &mut tmp), "-3142");
     }
+
+    #[test]
+    fn test_fmt() {
+        let mut pi: Mpf = Mpf::zero();
+        assert_eq!(format!("{:?}", pi), "0");
+        assert_eq!(format!("{:?}", -&pi), "0");
+
+        pi.set_from_str("3.141592653589", 10);
+
+        // From the GNU MP Section 7.4: "The generated string is a fraction,
+        // with an implicit radix point immediately to the left of the first
+        // digit. The applicable exponent is written through the expptr pointer.
+        // For example, the number 3.1416 would be returned as string "31416"
+        // and exponent 1."
+        assert_eq!(format!("{:?}", pi), "3141592653589e1");
+        assert_eq!(format!("{:?}", -&pi), "-3141592653589e1");
+    }
 }
