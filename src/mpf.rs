@@ -235,12 +235,19 @@ impl fmt::Display for Mpf {
 impl fmt::Debug for Mpf {
     /// Due to the way `Mpf::get_str` works, the output contains an implicit
     /// radix point to the left of the first digit. `3.14`, for instance, will
-    /// print as `314e1` which means `0.314e1`.
+    /// print as `0.314e1`.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut exp: c_long = 0;
         match self.get_str(0, 10, &mut exp) {
             ref n if n.len() == 0 => write!(f, "0"),
-            n => write!(f, "{}e{}", n, exp)
+            n => {
+                if self.sign() == Sign::Negative {
+                    // Skip sign output
+                    write!(f, "-0.{}e{}", &n[1..], exp)
+                } else {
+                    write!(f, "0.{}e{}", n, exp)
+                }
+            }
         }
     }
 }

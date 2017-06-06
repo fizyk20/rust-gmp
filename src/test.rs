@@ -739,7 +739,7 @@ mod mpf {
         // digit. The applicable exponent is written through the expptr pointer.
         // For example, the number 3.1416 would be returned as string "31416"
         // and exponent 1."
-        assert_eq!(format!("{:?}", pi), "3141592653589e1");
-        assert_eq!(format!("{:?}", -&pi), "-3141592653589e1");
+        assert_eq!(format!("{:?}", pi), "0.3141592653589e1");
+        assert_eq!(format!("{:?}", -&pi), "-0.3141592653589e1");
     }
 }
