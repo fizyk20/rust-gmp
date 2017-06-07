@@ -10,6 +10,7 @@ use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
 use super::sign::Sign;
 use num_traits::{Zero, One};
+use ffi::GString;
 
 type mp_exp_t = c_long;
 
@@ -119,13 +120,24 @@ impl Mpf {
         }
     }
 
-    pub fn get_str(&mut self, n_digits: i32, base: i32, exp: &mut c_long) -> String{
-        let c_str = CString::new("").unwrap();
-        let out;
-        unsafe{
-            out = CString::from_raw(__gmpf_get_str(c_str.into_raw(), exp, base, n_digits, &mut self.mpf));
+    pub fn get_str(&self, n_digits: i32, base: i32, exp: &mut c_long) -> String {
+        use std::ptr::null;
+        if n_digits == 0 {
+            // Maximal significant digits requested. Let GMP compute the length
+            // and allocate the space required.
+            unsafe {
+                let p = __gmpf_get_str(null(), exp, base, n_digits, &self.mpf);
+                // De-allocates the GMP string on drop.
+                GString::from_raw(p).to_str().unwrap().to_string()
+            }
+        } else {
+            // From mpf/get_str.c.
+            let c_str = CString::new(vec![37; n_digits as usize + 2]).unwrap();
+            unsafe {
+                let p = __gmpf_get_str(c_str.as_ptr(), exp, base, n_digits, &self.mpf);
+                CString::from_raw(p).to_str().unwrap().to_string()
+            }
         }
-        out.to_str().unwrap().to_string()
     }
 
     pub fn abs(&self) -> Mpf {
