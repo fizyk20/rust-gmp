@@ -17,7 +17,7 @@ pub struct GString(*mut u8, usize);
 
 impl GString {
     pub unsafe fn from_raw(raw: *mut c_char) -> GString {
-        GString(mem::transmute(raw), strlen(raw) as usize + 1)
+        GString(raw as *mut u8, strlen(raw) as usize + 1)
     }
 
     pub fn to_str(&self) -> Result<&str, str::Utf8Error> {
@@ -31,8 +31,8 @@ impl Drop for GString {
         use std::ptr::null_mut;
         unsafe {
             let mut free_func: FreeFunc = mem::uninitialized();
-            __gmp_get_memory_functions(null_mut(), null_mut(), mem::transmute(&mut free_func));
-            free_func(mem::transmute(self.0), self.1);
+            __gmp_get_memory_functions(null_mut(), null_mut(), &mut free_func);
+            free_func(self.0 as *mut c_char, self.1);
         }
     }
 }

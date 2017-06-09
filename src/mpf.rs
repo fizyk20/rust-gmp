@@ -1,5 +1,5 @@
 use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char};
-use std::mem::{transmute, uninitialized};
+use std::mem::uninitialized;
 use std::cmp;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
@@ -134,7 +134,7 @@ impl Mpf {
             let bytes = unsafe {
                 // n_digits + 2 from mpf/get_str.c.
                 let mut bytes: Vec<u8> = vec![0; n_digits as usize + 2];
-                let c_str: *mut c_char = transmute(bytes.as_mut_ptr());
+                let c_str: *mut c_char = bytes.as_mut_ptr() as *mut c_char;
                 __gmpf_get_str(c_str, exp, base, n_digits, &self.mpf);
                 bytes
             };
