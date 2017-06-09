@@ -220,9 +220,7 @@ impl Clone for Mpf {
 }
 
 impl fmt::Display for Mpf {
-    /// Due to the way `Mpf::get_str` works, the output contains an implicit
-    /// radix point to the left of the first digit. `3.14`, for instance, will
-    /// print as `314e1` which means `0.314e1`.
+    /// Confer the note for `fmt::Debug::fmt`.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         <Self as fmt::Debug>::fmt(self, f)
     }
