@@ -1,6 +1,6 @@
-use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char};
+use libc::{c_double, c_int, c_long, c_ulong, c_void, c_char, strlen};
 use std::mem::uninitialized;
-use std::cmp;
+use std::{cmp, str};
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::ffi::CString;
@@ -120,6 +120,7 @@ impl Mpf {
         }
     }
 
+    /// For values of zero, this will return an empty string.
     pub fn get_str(&self, n_digits: i32, base: i32, exp: &mut c_long) -> String {
         use std::ptr::null_mut;
         if n_digits == 0 {
@@ -131,14 +132,14 @@ impl Mpf {
                 GString::from_raw(p).to_str().unwrap().to_string()
             }
         } else {
-            let bytes = unsafe {
+            unsafe {
                 // n_digits + 2 from mpf/get_str.c.
                 let mut bytes: Vec<u8> = vec![0; n_digits as usize + 2];
                 let c_str: *mut c_char = bytes.as_mut_ptr() as *mut c_char;
                 __gmpf_get_str(c_str, exp, base, n_digits, &self.mpf);
-                bytes
-            };
-            String::from_utf8(bytes).unwrap()
+                // Don't include null bytes.
+                String::from(str::from_utf8(&bytes[..strlen(c_str)]).unwrap())
+            }
         }
     }
 
