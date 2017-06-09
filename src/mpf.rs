@@ -1,5 +1,5 @@
 use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char};
-use std::mem::uninitialized;
+use std::mem::{transmute, uninitialized};
 use std::cmp;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
@@ -132,11 +132,13 @@ impl Mpf {
             }
         } else {
             // From mpf/get_str.c.
-            let c_str = CString::new(vec![37; n_digits as usize + 2]).unwrap();
-            unsafe {
-                let p = __gmpf_get_str(c_str.as_ptr(), exp, base, n_digits, &self.mpf);
-                CString::from_raw(p).to_str().unwrap().to_string()
-            }
+            let bytes = unsafe {
+                let mut bytes: Vec<u8> = uninitialized();
+                let c_str: *mut c_char = transmute(bytes.as_mut_ptr());
+                __gmpf_get_str(c_str, exp, base, n_digits, &self.mpf);
+                bytes
+            };
+            String::from_utf8(bytes).unwrap()
         }
     }
 
