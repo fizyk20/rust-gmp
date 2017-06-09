@@ -131,9 +131,9 @@ impl Mpf {
                 GString::from_raw(p).to_str().unwrap().to_string()
             }
         } else {
-            // From mpf/get_str.c.
             let bytes = unsafe {
-                let mut bytes: Vec<u8> = uninitialized();
+                // n_digits + 2 from mpf/get_str.c.
+                let mut bytes: Vec<u8> = vec![0; n_digits as usize + 2];
                 let c_str: *mut c_char = transmute(bytes.as_mut_ptr());
                 __gmpf_get_str(c_str, exp, base, n_digits, &self.mpf);
                 bytes
