@@ -38,7 +38,7 @@ extern "C" {
 
     fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int);
     fn __gmpf_set_si(rop: mpf_ptr, op: c_long);
-    fn __gmpf_get_str(str: *const c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_srcptr) -> *mut c_char;
+    fn __gmpf_get_str(str: *mut c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_srcptr) -> *mut c_char;
 
     fn __gmpf_cmp(op1: mpf_srcptr, op2: mpf_srcptr) -> c_int;
     fn __gmpf_cmp_d(op1: mpf_srcptr, op2: c_double) -> c_int;
