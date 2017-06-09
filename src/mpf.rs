@@ -121,12 +121,12 @@ impl Mpf {
     }
 
     pub fn get_str(&self, n_digits: i32, base: i32, exp: &mut c_long) -> String {
-        use std::ptr::null;
+        use std::ptr::null_mut;
         if n_digits == 0 {
             // Maximal significant digits requested. Let GMP compute the length
             // and allocate the space required.
             unsafe {
-                let p = __gmpf_get_str(null(), exp, base, n_digits, &self.mpf);
+                let p = __gmpf_get_str(null_mut(), exp, base, n_digits, &self.mpf);
                 // De-allocates the GMP string on drop.
                 GString::from_raw(p).to_str().unwrap().to_string()
             }
