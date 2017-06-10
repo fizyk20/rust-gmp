@@ -1,6 +1,6 @@
-use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char};
+use libc::{c_double, c_int, c_long, c_ulong, c_void, c_char, strlen};
 use std::mem::uninitialized;
-use std::cmp;
+use std::{cmp, str};
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::ffi::CString;
@@ -10,6 +10,7 @@ use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
 use super::sign::Sign;
 use num_traits::{Zero, One};
+use ffi::GString;
 
 type mp_exp_t = c_long;
 
@@ -37,7 +38,7 @@ extern "C" {
 
     fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int);
     fn __gmpf_set_si(rop: mpf_ptr, op: c_long);
-    fn __gmpf_get_str(str: *const c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_ptr) -> *mut c_char;
+    fn __gmpf_get_str(str: *mut c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_srcptr) -> *mut c_char;
 
     fn __gmpf_cmp(op1: mpf_srcptr, op2: mpf_srcptr) -> c_int;
     fn __gmpf_cmp_d(op1: mpf_srcptr, op2: c_double) -> c_int;
@@ -119,13 +120,27 @@ impl Mpf {
         }
     }
 
-    pub fn get_str(&mut self, n_digits: i32, base: i32, exp: &mut c_long) -> String{
-        let c_str = CString::new("").unwrap();
-        let out;
-        unsafe{
-            out = CString::from_raw(__gmpf_get_str(c_str.into_raw(), exp, base, n_digits, &mut self.mpf));
+    /// For values of zero, this will return an empty string.
+    pub fn get_str(&self, n_digits: i32, base: i32, exp: &mut c_long) -> String {
+        use std::ptr::null_mut;
+        if n_digits == 0 {
+            // Maximal significant digits requested. Let GMP compute the length
+            // and allocate the space required.
+            unsafe {
+                let p = __gmpf_get_str(null_mut(), exp, base, n_digits, &self.mpf);
+                // De-allocates the GMP string on drop.
+                GString::from_raw(p).to_str().unwrap().to_string()
+            }
+        } else {
+            unsafe {
+                // n_digits + 2 from mpf/get_str.c.
+                let mut bytes: Vec<u8> = vec![0; n_digits as usize + 2];
+                let c_str: *mut c_char = bytes.as_mut_ptr() as *mut c_char;
+                __gmpf_get_str(c_str, exp, base, n_digits, &self.mpf);
+                // Don't include null bytes.
+                String::from(str::from_utf8(&bytes[..strlen(c_str)]).unwrap())
+            }
         }
-        out.to_str().unwrap().to_string()
     }
 
     pub fn abs(&self) -> Mpf {

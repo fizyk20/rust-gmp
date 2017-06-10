@@ -713,4 +713,16 @@ mod mpf {
         assert_eq!(five.sign(), Sign::Positive);
         assert_eq!(minus_five.sign(), Sign::Negative);
     }
+
+    #[test]
+    fn test_get_str() {
+        use libc::c_long;
+        let mut tmp = 0 as c_long;
+        let mut pi: Mpf = Mpf::zero();
+        assert_eq!(pi.get_str(4, 10, &mut tmp), "");
+        pi.set_from_str("3.141592653589", 10);
+
+        assert_eq!(&pi.get_str(4, 10, &mut tmp), "3142");
+        assert_eq!((-&pi).get_str(4, 10, &mut tmp), "-3142");
+    }
 }
