@@ -3,14 +3,17 @@ use std;
 use std::mem::uninitialized;
 use std::cmp;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
-use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
+use std::ops::{Div, DivAssign, Rem, RemAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
 use std::ffi::CString;
 use std::string::String;
+use std::error::Error;
+use std::fmt;
+use std::i32;
 use super::mpz::mp_bitcnt_t;
 use super::mpz::{Mpz, mpz_srcptr};
 use super::mpq::{Mpq, mpq_srcptr};
 use super::sign::Sign;
-use num_traits::{Zero, One};
+use num_traits::{Zero, One, Num, Signed};
 
 type mp_exp_t = c_long;
 
@@ -36,7 +39,7 @@ extern "C" {
     fn __gmpf_set_z(rop: mpf_ptr, op: mpz_srcptr);
     fn __gmpf_set_q(rop: mpf_ptr, op: mpq_srcptr);
 
-    fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int);
+    fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int) -> c_int;
     fn __gmpf_set_si(rop: mpf_ptr, op: c_long);
     fn __gmpf_get_str(str: *const c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_ptr) -> *mut c_char;
 
@@ -107,10 +110,15 @@ impl Mpf {
         unsafe { __gmpf_set_prec(&mut self.mpf, precision as c_ulong) }
     }
 
-    pub fn set_from_str(&mut self, string: &str, base: i32){
-        let c_str = CString::new(string).unwrap();
+    pub fn set_from_str(&mut self, string: &str, base: i32) -> Result<(), ParseMpfError> {
+        let c_str = CString::new(string).map_err(|_| ParseMpfError { _priv: () })?;
         unsafe {
-            __gmpf_set_str(&mut self.mpf, c_str.as_ptr(), base as c_int);
+            let r = __gmpf_set_str(&mut self.mpf, c_str.as_ptr(), base as c_int);
+            if r == 0 {
+                Ok(())
+            } else {
+                Err(ParseMpfError { _priv: () })
+            }
         }
     }
 
@@ -195,6 +203,27 @@ impl Mpf {
         } else {
             Sign::Negative
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct ParseMpfError {
+    _priv: ()
+}
+
+impl fmt::Display for ParseMpfError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
+impl Error for ParseMpfError {
+    fn description(&self) -> &'static str {
+        "invalid rational number"
+    }
+
+    fn cause(&self) -> Option<&'static Error> {
+        None
     }
 }
 
@@ -307,6 +336,53 @@ impl_oper!(Mul, mul, MulAssign, mul_assign, __gmpf_mul);
 impl_oper!(Div, div, DivAssign, div_assign, __gmpf_div);
 
 
+impl Rem<Mpf> for Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: Mpf) -> Mpf {
+        self.rem(&other)
+    }
+}
+
+impl<'a> Rem<&'a Mpf> for Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(mut self, other: &Mpf) -> Mpf {
+        self.rem_assign(other);
+        self
+    }
+}
+
+impl<'a> Rem<Mpf> for &'a Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: Mpf) -> Mpf {
+        self.rem(&other)
+    }
+}
+
+impl<'a, 'b> Rem<&'a Mpf> for &'b Mpf {
+    type Output = Mpf;
+    #[inline]
+    fn rem(self, other: &Mpf) -> Mpf {
+        self.clone().rem(other)
+    }
+}
+
+impl<'a> RemAssign<Mpf> for Mpf {
+    #[inline]
+    fn rem_assign(&mut self, other: Mpf) {
+        self.rem_assign(&other)
+    }
+}
+
+impl<'a> RemAssign<&'a Mpf> for Mpf {
+    fn rem_assign(&mut self, other: &Mpf) {
+        *self -= other * (&*self / other).floor();
+    }
+}
+
+
 impl<'b> Neg for &'b Mpf {
     type Output = Mpf;
     fn neg(self) -> Mpf {
@@ -349,5 +425,43 @@ impl One for Mpf {
         let mut res = Mpf::new(32);
         res.set_from_si(1);
         res
+    }
+}
+
+impl Num for Mpf {
+    type FromStrRadixErr = ParseMpfError;
+    fn from_str_radix(str: &str, radix: u32) -> Result<Mpf, ParseMpfError> {
+        assert!(radix <= i32::MAX as u32);
+        let mut res = Mpf::new(32);
+        res.set_from_str(str, radix as i32)?;
+        Ok(res)
+    }
+}
+
+impl Signed for Mpf {
+    fn abs(&self) -> Mpf {
+        self.abs()
+    }
+
+    fn abs_sub(&self, other: &Mpf) -> Mpf {
+        let mut res = self - other;
+        unsafe {
+            __gmpf_abs(&mut res.mpf, &res.mpf);
+        }
+        res
+    }
+
+    fn signum(&self) -> Mpf {
+        let mut res = Mpf::new(self.get_prec());
+        res.set_from_si(unsafe { __gmpf_cmp_ui(&self.mpf, 0) } as i64);
+        res
+    }
+
+    fn is_positive(&self) -> bool {
+        unsafe { __gmpf_cmp_ui(&self.mpf, 0) > 0 }
+    }
+
+    fn is_negative(&self) -> bool {
+        unsafe { __gmpf_cmp_ui(&self.mpf, 0) < 0 }
     }
 }
