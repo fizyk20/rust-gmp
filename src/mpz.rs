@@ -95,6 +95,7 @@ extern "C" {
     fn __gmpz_millerrabin(n: mpz_srcptr, reps: c_int) -> c_int;
     fn __gmpz_urandomb(rop: mpz_ptr, state: gmp_randstate_t, n: mp_bitcnt_t);
     fn __gmpz_urandomm(rop: mpz_ptr, state: gmp_randstate_t, n: mpz_srcptr);
+    fn __gmpz_perfect_square_p(op: mpz_srcptr) -> c_int;
 }
 
 pub struct Mpz {
@@ -449,6 +450,12 @@ impl Mpz {
 
     pub fn is_zero(&self) -> bool {
         self.mpz._mp_size == 0
+    }
+
+    pub fn is_square(&self) -> bool {
+        unsafe {
+            __gmpz_perfect_square_p(&self.mpz) != 0
+        }
     }
 }
 
