@@ -570,6 +570,15 @@ mod mpz {
         assert_eq!(five.sign(), Sign::Positive);
         assert_eq!(minus_five.sign(), Sign::Negative);
     }
+
+    #[test]
+    fn test_is_square() {
+        let three: Mpz = From::<i64>::from(3);
+        let four: Mpz = From::<i64>::from(4);
+
+        assert_eq!(three.is_square(), false);
+        assert_eq!(four.is_square(), true);
+    }
 }
 
 mod rand {
