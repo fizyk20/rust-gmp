@@ -109,7 +109,7 @@ impl Drop for Mpz {
 }
 
 /// The result of running probab_prime
-#[derive(PartialEq)]
+#[derive(PartialEq,Debug)]
 pub enum ProbabPrimeResult {
     NotPrime,
     ProbablyPrime,
