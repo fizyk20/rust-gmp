@@ -1,4 +1,4 @@
-use libc::{c_char, c_int, c_long, c_ulong, c_void, c_double, size_t};
+use libc::{c_char, c_int, c_long, c_ulong, c_void, c_double, size_t, strnlen};
 use super::rand::gmp_randstate_t;
 use super::sign::Sign;
 use std::convert::From;
@@ -88,7 +88,7 @@ extern "C" {
     fn __gmpz_invert(rop: mpz_ptr, op1: mpz_srcptr, op2: mpz_srcptr) -> c_int;
     fn __gmpz_import(rop: mpz_ptr, count: size_t, order: c_int, size: size_t,
                      endian: c_int, nails: size_t, op: *const c_void);
-    fn __gmpz_export(rop: *mut c_void, countp: *mut size_t, order: c_int, size: size_t, 
+    fn __gmpz_export(rop: *mut c_void, countp: *mut size_t, order: c_int, size: size_t,
                      endian: c_int, nails: size_t, op: mpz_srcptr);
     fn __gmpz_root(rop: mpz_ptr, op: mpz_srcptr, n: c_ulong) -> c_int;
     fn __gmpz_sqrt(rop: mpz_ptr, op: mpz_srcptr);
@@ -97,6 +97,7 @@ extern "C" {
     fn __gmpz_urandomm(rop: mpz_ptr, state: gmp_randstate_t, n: mpz_srcptr);
 }
 
+#[repr(transparent)]
 pub struct Mpz {
     mpz: mpz_struct,
 }
@@ -117,14 +118,17 @@ pub enum ProbabPrimeResult {
 }
 
 impl Mpz {
+    #[inline]
     pub unsafe fn inner(&self) -> mpz_srcptr {
         &self.mpz
     }
 
+    #[inline]
     pub unsafe fn inner_mut(&mut self) -> mpz_ptr {
         &mut self.mpz
     }
 
+    #[inline]
     pub fn new() -> Mpz {
         unsafe {
             let mut mpz = uninitialized();
@@ -133,6 +137,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn new_reserve(n: usize) -> Mpz {
         unsafe {
             let mut mpz = uninitialized();
@@ -141,12 +146,14 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn reserve(&mut self, n: usize) {
         if self.bit_length() < n {
             unsafe { __gmpz_realloc2(&mut self.mpz, n as c_ulong) }
         }
     }
 
+    #[inline]
     pub fn size_in_base(&self, base: u8) -> usize {
         unsafe {
             __gmpz_sizeinbase(&self.mpz, base as c_int) as usize
@@ -158,31 +165,22 @@ impl Mpz {
     //        machinery for a custom type.
     pub fn to_str_radix(&self, base: u8) -> String {
         unsafe {
+            assert!(base >= 2 && base <= 36, "invalid base");
             // Extra two bytes are for possible minus sign and null terminator
-            let len = __gmpz_sizeinbase(&self.mpz, base as c_int) as usize + 2;
+            let len = {
+                let len = __gmpz_sizeinbase(&self.mpz, base as c_int) as usize;
+                assert!(usize::MAX - len >= 2, "capacity overflow");
+                len + 2
+            };
 
             // Allocate and write into a raw *c_char of the correct length
             let mut vector: Vec<u8> = Vec::with_capacity(len);
-            vector.set_len(len);
-
             __gmpz_get_str(vector.as_mut_ptr() as *mut _, base as c_int, &self.mpz);
-
-            let mut first_nul = None;
-            let mut index : usize = 0;
-            for elem in &vector {
-                if *elem == 0 {
-                    first_nul = Some(index);
-                    break;
-                }
-                index += 1;
-            }
-            let first_nul = first_nul.unwrap_or(len);
-
-            vector.truncate(first_nul);
-            match String::from_utf8(vector) {
-                Ok(s)  => s,
-                Err(_) => panic!("GMP returned invalid UTF-8!")
-            }
+            let string_len = strnlen(vector.as_ptr(), len);
+            assert!(string_len < len);
+            vector.set_len(string_len);
+            // FIXME is this actually a problem?
+            String::from_utf8(vector).expect("GMP returned invalid UTF-8!")
         }
     }
 
@@ -201,6 +199,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn set(&mut self, other: &Mpz) {
         unsafe { __gmpz_set(&mut self.mpz, &other.mpz) }
     }
@@ -212,10 +211,12 @@ impl Mpz {
         unsafe { __gmpz_set_str(&mut self.mpz, s.as_ptr(), base as c_int) == 0 }
     }
 
+    #[inline]
     pub fn bit_length(&self) -> usize {
         unsafe { __gmpz_sizeinbase(&self.mpz, 2) as usize }
     }
 
+    #[inline]
     pub fn compl(&self) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -224,6 +225,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn abs(&self) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -232,6 +234,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn div_floor(&self, other: &Mpz) -> Mpz {
         unsafe {
             if other.is_zero() {
@@ -244,6 +247,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn mod_floor(&self, other: &Mpz) -> Mpz {
         unsafe {
             if other.is_zero() {
@@ -258,7 +262,7 @@ impl Mpz {
 
     /// Determine whether n is prime.
     ///
-    /// This function performs some trial divisions, then reps Miller-Rabin probabilistic primality tests. A higher reps value will reduce the chances of a non-prime being identified as “probably prime”. A composite number will be identified as a prime with a probability of less than 4^(-reps). Reasonable values of reps are between 15 and 50. 
+    /// This function performs some trial divisions, then reps Miller-Rabin probabilistic primality tests. A higher reps value will reduce the chances of a non-prime being identified as “probably prime”. A composite number will be identified as a prime with a probability of less than 4^(-reps). Reasonable values of reps are between 15 and 50.
     pub fn probab_prime(&self, reps: i32) -> ProbabPrimeResult {
         match unsafe {
             __gmpz_probab_prime_p(&self.mpz, reps as c_int) as u8
@@ -270,6 +274,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn nextprime(&self) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -278,6 +283,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn gcd(&self, other: &Mpz) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -298,6 +304,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn lcm(&self, other: &Mpz) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -306,6 +313,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn is_multiple_of(&self, other: &Mpz) -> bool {
         unsafe {
             __gmpz_divisible_p(&self.mpz, &other.mpz) != 0
@@ -341,10 +349,12 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn popcount(&self) -> usize {
         unsafe { __gmpz_popcount(&self.mpz) as usize }
     }
 
+    #[inline]
     pub fn pow(&self, exp: u32) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -353,6 +363,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn powm(&self, exp: &Mpz, modulus: &Mpz) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -361,6 +372,7 @@ impl Mpz {
         }
     }
 
+    #[inline]
     pub fn powm_sec(&self, exp: &Mpz, modulus: &Mpz) -> Mpz {
         unsafe {
             let mut res = Mpz::new();
@@ -368,7 +380,8 @@ impl Mpz {
             res
         }
     }
-    
+
+    #[inline]
     pub fn ui_pow_ui(x: u32, y: u32) -> Mpz {
     	unsafe {
     		let mut res = Mpz::new();
@@ -377,22 +390,27 @@ impl Mpz {
     	}
     }
 
+    #[inline]
     pub fn hamdist(&self, other: &Mpz) -> usize {
         unsafe { __gmpz_hamdist(&self.mpz, &other.mpz) as usize }
     }
 
+    #[inline]
     pub fn setbit(&mut self, bit_index: usize) {
         unsafe { __gmpz_setbit(&mut self.mpz, bit_index as c_ulong) }
     }
 
+    #[inline]
     pub fn clrbit(&mut self, bit_index: usize) {
         unsafe { __gmpz_clrbit(&mut self.mpz, bit_index as c_ulong) }
     }
 
+    #[inline]
     pub fn combit(&mut self, bit_index: usize) {
         unsafe { __gmpz_combit(&mut self.mpz, bit_index as c_ulong) }
     }
 
+    #[inline]
     pub fn tstbit(&self, bit_index: usize) -> bool {
         unsafe { __gmpz_tstbit(&self.mpz, bit_index as c_ulong) == 1 }
     }
@@ -538,7 +556,7 @@ macro_rules! bit_guard {
     		$e2
     	}
 	);
-	
+
 	(i64, $what: ident, $e1: expr, $e2: expr) => (
     	if size_of::<c_long>() == 8 || $what <= i32::MAX as i64 {
             $e1
@@ -547,9 +565,9 @@ macro_rules! bit_guard {
     		$e2
     	}
 	);
-	
+
 	(u32, $what: ident, $e1: expr, $e2: expr) => ($e1);
-	
+
 	(i32, $what: ident, $e1: expr, $e2: expr) => ($e1);
 }
 
@@ -562,7 +580,7 @@ macro_rules! impl_oper {
 				self.$meth(&other)
 			}
 		}
-		
+
 		impl<'a> $tr<&'a Mpz> for Mpz {
 			type Output = Mpz;
 			#[inline]
@@ -571,7 +589,7 @@ macro_rules! impl_oper {
 				self
 			}
 		}
-		
+
 		impl<'a> $tr<Mpz> for &'a Mpz {
 			type Output = Mpz;
 			#[inline]
@@ -583,7 +601,7 @@ macro_rules! impl_oper {
 				}
 			}
 		}
-		
+
 		impl<'a, 'b> $tr<&'b Mpz> for &'a Mpz {
 			type Output = Mpz;
 			fn $meth(self, other: &Mpz) -> Mpz {
@@ -595,14 +613,14 @@ macro_rules! impl_oper {
 				}
 			}
 		}
-		
+
 		impl $tr_assign<Mpz> for Mpz {
 			#[inline]
 			fn $meth_assign(&mut self, other: Mpz) {
 				self.$meth_assign(&other)
 			}
 		}
-		
+
 		impl<'a> $tr_assign<&'a Mpz> for Mpz {
 			#[inline]
 			fn $meth_assign(&mut self, other: &Mpz) {
@@ -613,10 +631,10 @@ macro_rules! impl_oper {
 			}
 		}
 	};
-	
+
 	(both $num: ident, $cnum: ident, $tr: ident, $meth: ident, $tr_assign: ident, $meth_assign: ident, $fun: ident) => {
 		impl_oper!(normal $num, $cnum, $tr, $meth, $tr_assign, $meth_assign, $fun);
-		
+
 		impl $tr<Mpz> for $num {
 			type Output = Mpz;
 			#[inline]
@@ -629,7 +647,7 @@ macro_rules! impl_oper {
 				}
 			}
 		}
-		
+
 		impl<'a> $tr<&'a Mpz> for $num {
 			type Output = Mpz;
 			fn $meth(self, other: &'a Mpz) -> Mpz {
@@ -643,7 +661,7 @@ macro_rules! impl_oper {
 			}
 		}
 	};
-	
+
 	(normal $num: ident, $cnum: ident, $tr: ident, $meth: ident, $tr_assign: ident, $meth_assign: ident, $fun: ident) => {
 		impl $tr<$num> for Mpz {
 			type Output = Mpz;
@@ -653,7 +671,7 @@ macro_rules! impl_oper {
 				self
 			}
 		}
-		
+
 		impl<'a> $tr<$num> for &'a Mpz {
 			type Output = Mpz;
 			fn $meth(self, other: $num) -> Mpz {
@@ -667,7 +685,7 @@ macro_rules! impl_oper {
 		        }
 			}
 		}
-		
+
 		impl $tr_assign<$num> for Mpz {
 			#[inline]
 			fn $meth_assign(&mut self, other: $num) {
@@ -680,7 +698,7 @@ macro_rules! impl_oper {
 			}
 		}
 	};
-	
+
 	(reverse $num: ident, $cnum: ident, $tr: ident, $meth: ident, $fun: ident) => {
 		impl $tr<Mpz> for $num {
 			type Output = Mpz;
@@ -694,7 +712,7 @@ macro_rules! impl_oper {
 				}
 			}
 		}
-		
+
 		impl<'a> $tr<&'a Mpz> for $num {
 			type Output = Mpz;
 			fn $meth(self, other: &'a Mpz) -> Mpz {
@@ -708,7 +726,7 @@ macro_rules! impl_oper {
 			}
 		}
 	};
-	
+
 }
 
 impl_oper!(Add, add, AddAssign, add_assign, __gmpz_add);
@@ -716,7 +734,7 @@ impl_oper!(both u64, c_ulong, Add, add, AddAssign, add_assign, __gmpz_add_ui);
 
 impl_oper!(Sub, sub, SubAssign, sub_assign, __gmpz_sub);
 impl_oper!(normal u64, c_ulong, Sub, sub, SubAssign, sub_assign, __gmpz_sub_ui);
-impl_oper!(reverse u64, c_ulong, Sub, sub, __gmpz_ui_sub); 
+impl_oper!(reverse u64, c_ulong, Sub, sub, __gmpz_ui_sub);
 
 impl_oper!(Mul, mul, MulAssign, mul_assign, __gmpz_mul);
 impl_oper!(both i64, c_long, Mul, mul, MulAssign, mul_assign, __gmpz_mul_si);
