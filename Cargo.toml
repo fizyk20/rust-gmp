@@ -1,17 +1,20 @@
 [package]
-name = "rust-gmp"
-version = "0.5.1"
 authors = [ "thestinger <danielmicay@gmail.com>", "Bartłomiej Kamiński <fizyk20@gmail.com>" ]
 description = "Rust bindings for GMP"
-edition = "2018"
-repository = "https://github.com/fizyk20/rust-gmp"
 documentation = "https://docs.rs/rust-gmp"
-license = "MIT"
+edition = "2018"
 keywords = [ "gmp", "multi", "precision", "arithmetic", "bignum" ]
+license = "MIT"
+name = "rust-gmp"
+repository = "https://github.com/fizyk20/rust-gmp"
+version = "0.5.1"
+
+[badges]
+maintenance = { status = "passively-maintained" }
 
 [lib]
 name = "gmp"
 
 [dependencies]
 libc = "~0.2"
-num-traits = "0.1"
+num-traits = "0.2"

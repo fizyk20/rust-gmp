@@ -15,9 +15,9 @@ fn test_limb_size() {
 }
 
 mod mpz {
-    use super::super::mpz::Mpz;
-    use super::super::mpz::ProbabPrimeResult;
-    use super::super::sign::Sign;
+    use crate::mpz::Mpz;
+    use crate::mpz::ProbabPrimeResult;
+    use crate::sign::Sign;
     use std::str::FromStr;
     use std::convert::{From, Into};
     use std::{i64, u64};
@@ -98,7 +98,7 @@ mod mpz {
     fn test_div_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod mpz {
     fn test_rem_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x % y;
+        let _ = x % y;
     }
 
     #[test]
@@ -313,7 +313,7 @@ mod mpz {
 
     #[test]
     fn test_popcount() {
-        Mpz::from_str_radix("1010010011", 2).unwrap().popcount() == 5;
+        assert_eq!(Mpz::from_str_radix("1010010011", 2).unwrap().popcount(),  5);
     }
 
     #[test]
@@ -570,6 +570,17 @@ mod mpz {
         assert_eq!(five.sign(), Sign::Positive);
         assert_eq!(minus_five.sign(), Sign::Negative);
     }
+
+    #[test]
+    fn test_div_rem() {
+        let seven: Mpz = From::<i64>::from(7);
+        let three: Mpz = From::<i64>::from(3);
+        let two: Mpz = From::<i64>::from(2);
+        let one = Mpz::one();
+        let (q, r) = seven.div_rem(&three);
+        assert_eq!(q, two);
+        assert_eq!(r, one);
+    }
 }
 
 mod rand {
@@ -609,7 +620,7 @@ mod mpq {
     fn test_div_zero() {
         let x: Mpq = From::<i64>::from(1);
         let y = Mpq::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -698,7 +709,7 @@ mod mpf {
     #[should_panic]
     fn test_div_zero() {
         let x = Mpf::new(0);
-        &x / &x;
+        let _ = &x / &x;
     }
 
     #[test]
