@@ -1,13 +1,13 @@
-use super::mpz::{mpz_struct, Mpz, mpz_ptr, mpz_srcptr};
-use super::mpf::{Mpf, mpf_srcptr};
-use super::sign::Sign;
-use ffi::*;
-use libc::{c_char, c_double, c_int, c_ulong};
+use crate::mpz::{mpz_struct, Mpz, mpz_ptr, mpz_srcptr};
+use crate::mpf::{Mpf, mpf_srcptr};
+use crate::sign::Sign;
+use crate::ffi::*;
+use std::os::raw::{c_char, c_double, c_int, c_ulong};
 use std::ffi::CString;
 use std::str::FromStr;
 use std::error::Error;
 use std::convert::From;
-use std::mem::uninitialized;
+use std::mem::MaybeUninit;
 use std::fmt;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
@@ -72,7 +72,7 @@ impl Mpq {
 
     pub fn new() -> Mpq {
         unsafe {
-            let mut mpq = uninitialized();
+            let mut mpq = MaybeUninit::uninit().assume_init();
             __gmpq_init(&mut mpq);
             Mpq { mpq: mpq }
         }
@@ -197,7 +197,7 @@ pub struct ParseMpqError {
 
 impl fmt::Display for ParseMpqError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
+        write!(f, "{:?}", self)
     }
 }
 
@@ -206,7 +206,7 @@ impl Error for ParseMpqError {
         "invalid rational number"
     }
 
-    fn cause(&self) -> Option<&'static Error> {
+    fn cause(&self) -> Option<&'static dyn Error> {
         None
     }
 }
