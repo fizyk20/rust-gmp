@@ -1,6 +1,7 @@
-use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char, free};
+use libc::free;
+use std::os::raw::{c_double, c_int, c_long, c_ulong, c_void, c_char};
 use std;
-use std::mem::uninitialized;
+use std::mem::MaybeUninit;
 use std::cmp;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
@@ -81,7 +82,7 @@ impl Mpf {
 
     pub fn new(precision: usize) -> Mpf {
         unsafe {
-            let mut mpf = uninitialized();
+            let mut mpf = MaybeUninit::uninit().assume_init();
             __gmpf_init2(&mut mpf, precision as c_ulong);
             Mpf { mpf: mpf }
         }
@@ -201,7 +202,7 @@ impl Mpf {
 impl Clone for Mpf {
     fn clone(&self) -> Mpf {
         unsafe {
-            let mut mpf = uninitialized();
+            let mut mpf = MaybeUninit::uninit().assume_init();
             __gmpf_init_set(&mut mpf, &self.mpf);
             Mpf { mpf: mpf }
         }
