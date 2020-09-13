@@ -186,9 +186,35 @@ mod mpz {
 
     #[test]
     fn test_from_int() {
-        let x: Mpz = From::<i64>::from(150);
-        assert!(x.to_string() == "150".to_string());
-        assert!(x == FromStr::from_str("150").unwrap());
+        fn tst<T>(x: T, expected: &str)
+        where
+            Mpz: From<T>,
+        {
+            let x: Mpz = Mpz::from(x);
+            assert_eq!(x.to_string(), expected);
+            assert_eq!(x, FromStr::from_str(expected).unwrap());
+        }
+
+        tst(150_u8, "150");
+        tst(150_u16, "150");
+        tst(150_u32, "150");
+        tst(150_u64, "150");
+        tst(150_u128, "150");
+        tst(150_usize, "150");
+
+        tst(75_i8, "75");
+        tst(150_i16, "150");
+        tst(150_i32, "150");
+        tst(150_i64, "150");
+        tst(150_i128, "150");
+        tst(150_isize, "150");
+
+        tst(-75_i8, "-75");
+        tst(-150_i16, "-150");
+        tst(-150_i32, "-150");
+        tst(-150_i64, "-150");
+        tst(-150_i128, "-150");
+        tst(-150_isize, "-150");
     }
 
     #[test]

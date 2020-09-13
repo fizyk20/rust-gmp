@@ -845,6 +845,17 @@ impl<'a> From<&'a [u8]> for Mpz {
     }
 }
 
+impl From<u128> for Mpz {
+    fn from(other: u128) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+            __gmpz_import(&mut res.mpz, 1, -1, size_of::<u128>() as size_t, 0, 0,
+                          &other as *const u128 as *const c_void);
+            res
+        }
+    }
+}
+
 impl From<u64> for Mpz {
     fn from(other: u64) -> Mpz {
         unsafe {
@@ -862,6 +873,57 @@ impl From<u32> for Mpz {
             let mut res = Mpz::new();
             __gmpz_import(&mut res.mpz, 1, -1, size_of::<u32>() as size_t, 0, 0,
                           &other as *const u32 as *const c_void);
+            res
+        }
+    }
+}
+
+impl From<u16> for Mpz {
+    fn from(other: u16) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+            __gmpz_import(&mut res.mpz, 1, -1, size_of::<u16>() as size_t, 0, 0,
+                          &other as *const u16 as *const c_void);
+            res
+        }
+    }
+}
+
+impl From<u8> for Mpz {
+    fn from(other: u8) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+            __gmpz_import(&mut res.mpz, 1, -1, size_of::<u8>() as size_t, 0, 0,
+                          &other as *const u8 as *const c_void);
+            res
+        }
+    }
+}
+
+impl From<usize> for Mpz {
+    fn from(other: usize) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+            __gmpz_import(&mut res.mpz, 1, -1, size_of::<usize>() as size_t, 0, 0,
+                          &other as *const usize as *const c_void);
+            res
+        }
+    }
+}
+
+impl From<i128> for Mpz {
+    fn from(other: i128) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+
+            if other.is_negative() {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i128>() as size_t, 0, 0,
+                              &(other ^ -1i128) as *const i128 as *const c_void);
+                __gmpz_com(&mut res.mpz, &res.mpz);
+            } else {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i128>() as size_t, 0, 0,
+                              &other as *const i128 as *const c_void);
+            }
             res
         }
     }
@@ -897,6 +959,60 @@ impl From<i32> for Mpz {
             } else {
                 __gmpz_import(&mut res.mpz, 1, -1, size_of::<i32>() as size_t, 0, 0,
                               &other as *const i32 as *const c_void);
+            }
+            res
+        }
+    }
+}
+
+impl From<i16> for Mpz {
+    fn from(other: i16) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+
+            if other.is_negative() {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i16>() as size_t, 0, 0,
+                              &(other ^ -1i16) as *const i16 as *const c_void);
+                __gmpz_com(&mut res.mpz, &res.mpz);
+            } else {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i16>() as size_t, 0, 0,
+                              &other as *const i16 as *const c_void);
+            }
+            res
+        }
+    }
+}
+
+impl From<i8> for Mpz {
+    fn from(other: i8) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+
+            if other.is_negative() {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i8>() as size_t, 0, 0,
+                              &(other ^ -1i8) as *const i8 as *const c_void);
+                __gmpz_com(&mut res.mpz, &res.mpz);
+            } else {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i8>() as size_t, 0, 0,
+                              &other as *const i8 as *const c_void);
+            }
+            res
+        }
+    }
+}
+
+impl From<isize> for Mpz {
+    fn from(other: isize) -> Mpz {
+        unsafe {
+            let mut res = Mpz::new();
+
+            if other.is_negative() {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<isize>() as size_t, 0, 0,
+                              &(other ^ -1isize) as *const isize as *const c_void);
+                __gmpz_com(&mut res.mpz, &res.mpz);
+            } else {
+                __gmpz_import(&mut res.mpz, 1, -1, size_of::<isize>() as size_t, 0, 0,
+                              &other as *const isize as *const c_void);
             }
             res
         }
