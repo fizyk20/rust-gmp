@@ -845,63 +845,54 @@ impl<'a> From<&'a [u8]> for Mpz {
     }
 }
 
-impl From<u64> for Mpz {
-    fn from(other: u64) -> Mpz {
-        unsafe {
-            let mut res = Mpz::new();
-            __gmpz_import(&mut res.mpz, 1, -1, size_of::<u64>() as size_t, 0, 0,
-                          &other as *const u64 as *const c_void);
-            res
-        }
-    }
-}
-
-impl From<u32> for Mpz {
-    fn from(other: u32) -> Mpz {
-        unsafe {
-            let mut res = Mpz::new();
-            __gmpz_import(&mut res.mpz, 1, -1, size_of::<u32>() as size_t, 0, 0,
-                          &other as *const u32 as *const c_void);
-            res
-        }
-    }
-}
-
-impl From<i64> for Mpz {
-    fn from(other: i64) -> Mpz {
-        unsafe {
-            let mut res = Mpz::new();
-
-            if other.is_negative() {
-                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i64>() as size_t, 0, 0,
-                              &(other ^ -1i64) as *const i64 as *const c_void);
-                __gmpz_com(&mut res.mpz, &res.mpz);
-            } else {
-                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i64>() as size_t, 0, 0,
-                              &other as *const i64 as *const c_void);
+macro_rules! impl_from_uint {
+    ($typ: ident) => {
+        impl From<$typ> for Mpz {
+            fn from(other: $typ) -> Mpz {
+                let mut res = Mpz::new();
+                unsafe {
+                    __gmpz_import(&mut res.mpz, 1, -1, size_of::<$typ>() as size_t, 0, 0,
+                                  &other as *const $typ as *const c_void);
+                }
+                res
             }
-            res
         }
     }
 }
+impl_from_uint!(u128);
+impl_from_uint!(u64);
+impl_from_uint!(u32);
+impl_from_uint!(u16);
+impl_from_uint!(u8);
+impl_from_uint!(usize);
 
-impl From<i32> for Mpz {
-    fn from(other: i32) -> Mpz {
-        unsafe {
-            let mut res = Mpz::new();
-
-            if other.is_negative() {
-                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i32>() as size_t, 0, 0,
-                              &(other ^ -1i32) as *const i32 as *const c_void);
-                __gmpz_com(&mut res.mpz, &res.mpz);
-            } else {
-                __gmpz_import(&mut res.mpz, 1, -1, size_of::<i32>() as size_t, 0, 0,
-                              &other as *const i32 as *const c_void);
+macro_rules! impl_from_iint {
+    ($typ: ident) => {
+        impl From<$typ> for Mpz {
+            fn from(other: $typ) -> Mpz {
+                let mut res = Mpz::new();
+                unsafe {
+                    if other.is_negative() {
+                        __gmpz_import(&mut res.mpz, 1, -1, size_of::<$typ>() as size_t, 0, 0,
+                                      &(other ^ (-1 as $typ)) as *const $typ as *const c_void);
+                        __gmpz_com(&mut res.mpz, &res.mpz);
+                    } else {
+                        __gmpz_import(&mut res.mpz, 1, -1, size_of::<$typ>() as size_t, 0, 0,
+                                      &other as *const $typ as *const c_void);
+                    }
+                }
+                res
             }
-            res
         }
+
     }
 }
+impl_from_iint!(i128);
+impl_from_iint!(i64);
+impl_from_iint!(i32);
+impl_from_iint!(i16);
+impl_from_iint!(i8);
+impl_from_iint!(isize);
 
 impl_oper!(BitAnd, bitand, BitAndAssign, bitand_assign, __gmpz_and);
 impl_oper!(BitOr, bitor, BitOrAssign, bitor_assign, __gmpz_ior);
