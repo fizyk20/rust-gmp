@@ -203,19 +203,11 @@ pub struct ParseMpqError {
 
 impl fmt::Display for ParseMpqError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
+        write!(f, "invalid rational number")
     }
 }
 
-impl Error for ParseMpqError {
-    fn description(&self) -> &'static str {
-        "invalid rational number"
-    }
-
-    fn cause(&self) -> Option<&'static dyn Error> {
-        None
-    }
-}
+impl Error for ParseMpqError {}
 
 impl Clone for Mpq {
     fn clone(&self) -> Mpq {

@@ -480,19 +480,11 @@ pub struct ParseMpzError {
 
 impl fmt::Display for ParseMpzError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
+        write!(f, "invalid integer")
     }
 }
 
-impl Error for ParseMpzError {
-    fn description(&self) -> &'static str {
-        "invalid integer"
-    }
-
-    fn cause(&self) -> Option<&'static dyn Error> {
-        None
-    }
-}
+impl Error for ParseMpzError {}
 
 impl Clone for Mpz {
     fn clone(&self) -> Mpz {
