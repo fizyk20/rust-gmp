@@ -12,6 +12,7 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
+use std::ptr;
 use std::str::FromStr;
 use std::{fmt, hash};
 use std::{i32, u32};
@@ -777,7 +778,7 @@ impl<'b> From<&'b Mpz> for Vec<u8> {
             let mut result: Vec<u8> = vec![0; size];
             __gmpz_export(
                 result.as_mut_ptr() as *mut c_void,
-                0 as *mut size_t,
+                ptr::null_mut::<size_t>(),
                 1,
                 size_of::<u8>() as size_t,
                 0,
@@ -805,7 +806,7 @@ impl<'b> From<&'b Mpz> for Option<i64> {
                 let mut result: i64 = 0;
                 __gmpz_export(
                     &mut result as *mut i64 as *mut c_void,
-                    0 as *mut size_t,
+                    ptr::null_mut::<size_t>(),
                     -1,
                     size_of::<i64>() as size_t,
                     0,
@@ -831,7 +832,7 @@ impl<'b> From<&'b Mpz> for Option<u64> {
                 let mut result: u64 = 0;
                 __gmpz_export(
                     &mut result as *mut u64 as *mut c_void,
-                    0 as *mut size_t,
+                    ptr::null_mut::<size_t>(),
                     -1,
                     size_of::<u64>() as size_t,
                     0,
