@@ -93,7 +93,7 @@ impl Mpf {
         unsafe {
             let mut mpf = uninitialized();
             __gmpf_init2(&mut mpf, precision as c_ulong);
-            Mpf { mpf: mpf }
+            Mpf { mpf }
         }
     }
 
@@ -219,7 +219,7 @@ impl Clone for Mpf {
         unsafe {
             let mut mpf = uninitialized();
             __gmpf_init_set(&mut mpf, &self.mpf);
-            Mpf { mpf: mpf }
+            Mpf { mpf }
         }
     }
 }

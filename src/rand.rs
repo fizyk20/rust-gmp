@@ -48,7 +48,7 @@ impl RandState {
         unsafe {
             let mut state: gmp_randstate_struct = uninitialized();
             __gmp_randinit_default(&mut state);
-            RandState { state: state }
+            RandState { state }
         }
     }
 
@@ -56,7 +56,7 @@ impl RandState {
         unsafe {
             let mut state: gmp_randstate_struct = uninitialized();
             __gmp_randinit_mt(&mut state);
-            RandState { state: state }
+            RandState { state }
         }
     }
 
@@ -64,7 +64,7 @@ impl RandState {
         unsafe {
             let mut state: gmp_randstate_struct = uninitialized();
             __gmp_randinit_lc_2exp(&mut state, a.inner(), c as c_ulong, m2exp as c_ulong);
-            RandState { state: state }
+            RandState { state }
         }
     }
 
@@ -72,7 +72,7 @@ impl RandState {
         unsafe {
             let mut state: gmp_randstate_struct = uninitialized();
             __gmp_randinit_lc_2exp_size(&mut state, size as c_ulong);
-            RandState { state: state }
+            RandState { state }
         }
     }
 
@@ -108,7 +108,7 @@ impl Clone for RandState {
         unsafe {
             let mut state: gmp_randstate_struct = uninitialized();
             __gmp_randinit_set(&mut state, &self.state);
-            RandState { state: state }
+            RandState { state }
         }
     }
 }

@@ -148,7 +148,7 @@ impl Mpz {
         unsafe {
             let mut mpz = uninitialized();
             __gmpz_init(&mut mpz);
-            Mpz { mpz: mpz }
+            Mpz { mpz }
         }
     }
 
@@ -156,7 +156,7 @@ impl Mpz {
         unsafe {
             let mut mpz = uninitialized();
             __gmpz_init2(&mut mpz, n as c_ulong);
-            Mpz { mpz: mpz }
+            Mpz { mpz }
         }
     }
 
@@ -210,7 +210,7 @@ impl Mpz {
             let mut mpz = uninitialized();
             let r = __gmpz_init_set_str(&mut mpz, s.as_ptr(), base as c_int);
             if r == 0 {
-                Ok(Mpz { mpz: mpz })
+                Ok(Mpz { mpz })
             } else {
                 __gmpz_clear(&mut mpz);
                 Err(ParseMpzError { _priv: () })
@@ -450,7 +450,7 @@ impl Mpz {
         unsafe {
             let mut mpz = uninitialized();
             __gmpz_init_set_ui(&mut mpz, 1);
-            Mpz { mpz: mpz }
+            Mpz { mpz }
         }
     }
 
@@ -489,7 +489,7 @@ impl Clone for Mpz {
         unsafe {
             let mut mpz = uninitialized();
             __gmpz_init_set(&mut mpz, &self.mpz);
-            Mpz { mpz: mpz }
+            Mpz { mpz }
         }
     }
 }

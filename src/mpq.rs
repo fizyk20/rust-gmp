@@ -76,7 +76,7 @@ impl Mpq {
         unsafe {
             let mut mpq = uninitialized();
             __gmpq_init(&mut mpq);
-            Mpq { mpq: mpq }
+            Mpq { mpq }
         }
     }
 
