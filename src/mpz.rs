@@ -189,18 +189,9 @@ impl Mpz {
 
             __gmpz_get_str(vector.as_mut_ptr() as *mut _, base as c_int, &self.mpz);
 
-            let mut first_nul = None;
-            let mut index: usize = 0;
-            for elem in &vector {
-                if *elem == 0 {
-                    first_nul = Some(index);
-                    break;
-                }
-                index += 1;
-            }
-            let first_nul = first_nul.unwrap_or(len);
-
+            let first_nul = vector.iter().position(|elem| *elem == 0).unwrap_or(len);
             vector.truncate(first_nul);
+
             match String::from_utf8(vector) {
                 Ok(s) => s,
                 Err(_) => panic!("GMP returned invalid UTF-8!"),

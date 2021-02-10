@@ -425,6 +425,7 @@ mod mpz {
         assert!(onea == oneb);
     }
 
+    #[allow(clippy::needless_range_loop)] // Range loop is cleaner.
     #[test]
     fn test_bit_fiddling() {
         let mut xs: Mpz = From::<i64>::from(0b1010_1000_0010_0011);
