@@ -412,11 +412,8 @@ impl Mpz {
         assert!(self.mpz._mp_size >= 0);
         unsafe {
             let mut res = Mpz::new();
-            let _perfect_root = match __gmpz_root(&mut res.mpz, &self.mpz, n as c_ulong) {
-                0 => false,
-                _ => true,
-            };
-            // TODO: consider returning `_perfect_root`
+            // TODO: Consider returning this return value (non-zero == perfect root)
+            __gmpz_root(&mut res.mpz, &self.mpz, n as c_ulong);
             res
         }
     }
