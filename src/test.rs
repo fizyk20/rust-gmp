@@ -82,6 +82,7 @@ mod mpz {
         assert!(y != z);
     }
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     fn test_ord() {
         let x: Mpz = FromStr::from_str("40000000000000000000000").unwrap();
@@ -485,6 +486,7 @@ mod mpz {
         assert_eq!(hash(&one), hash(&(&two - &one)));
     }
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     fn test_hash_long() {
         let a = Mpz::from_str_radix("348917329847193287498312749187234192387", 10).unwrap();
@@ -706,6 +708,7 @@ mod mpf {
     use super::super::mpf::Mpf;
     use super::super::sign::Sign;
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     #[should_panic]
     fn test_div_zero() {
