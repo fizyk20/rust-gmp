@@ -819,7 +819,7 @@ impl<'b> From<&'b Mpz> for Option<i64> {
                     Some(result)
                 }
             } else {
-                return None;
+                None
             }
         }
     }
