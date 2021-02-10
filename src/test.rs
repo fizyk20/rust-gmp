@@ -161,13 +161,13 @@ mod mpz {
     #[test]
     fn test_to_str_radix() {
         let x: Mpz = From::<i64>::from(255);
-        assert!(x.to_str_radix(16) == "ff".to_string());
+        assert_eq!(x.to_str_radix(16), "ff");
     }
 
     #[test]
     fn test_to_string() {
         let x: Mpz = FromStr::from_str("1234567890").unwrap();
-        assert!(x.to_string() == "1234567890".to_string());
+        assert_eq!(x.to_string(), "1234567890");
     }
 
     #[test]
@@ -188,7 +188,7 @@ mod mpz {
     #[test]
     fn test_from_int() {
         let x: Mpz = From::<i64>::from(150);
-        assert!(x.to_string() == "150".to_string());
+        assert_eq!(x.to_string(), "150");
         assert!(x == FromStr::from_str("150").unwrap());
     }
 
@@ -196,7 +196,7 @@ mod mpz {
     fn test_from_slice_u8() {
         let v: Vec<u8> = vec![255, 255];
         let x: Mpz = From::from(&v[..]);
-        assert!(x.to_string() == "65535".to_string());
+        assert_eq!(x.to_string(), "65535");
     }
 
     #[test]
