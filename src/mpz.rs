@@ -479,7 +479,7 @@ impl Error for ParseMpzError {
         "invalid integer"
     }
 
-    fn cause(&self) -> Option<&'static Error> {
+    fn cause(&self) -> Option<&'static dyn Error> {
         None
     }
 }
