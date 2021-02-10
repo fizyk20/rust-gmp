@@ -212,7 +212,7 @@ impl Mpz {
         let s = CString::new(s.to_string()).map_err(|_| ParseMpzError { _priv: () })?;
         let mut mpz = MaybeUninit::uninit();
         unsafe {
-            assert!(base == 0 || (base >= 2 && base <= 62));
+            assert!(base == 0 || (2..=62).contains(&base));
 
             let r = __gmpz_init_set_str(mpz.as_mut_ptr(), s.as_ptr(), base as c_int);
             if r != 0 {
@@ -232,7 +232,7 @@ impl Mpz {
 
     // TODO: too easy to forget to check this return value - rename?
     pub fn set_from_str_radix(&mut self, s: &str, base: u8) -> bool {
-        assert!(base == 0 || (base >= 2 && base <= 62));
+        assert!(base == 0 || (2..=62).contains(&base));
         let s = CString::new(s.to_string()).unwrap();
         unsafe { __gmpz_set_str(&mut self.mpz, s.as_ptr(), base as c_int) == 0 }
     }

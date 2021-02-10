@@ -97,7 +97,7 @@ impl Mpq {
         let s = CString::new(s).map_err(|_| ParseMpqError { _priv: () })?;
         let mut res = Mpq::new();
         unsafe {
-            assert!(base == 0 || (base >= 2 && base <= 62));
+            assert!(base == 0 || (2..=62).contains(&base));
             let r = __gmpq_set_str(&mut res.mpq, s.as_ptr(), base as c_int);
 
             if r == 0 {
