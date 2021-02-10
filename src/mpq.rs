@@ -9,7 +9,7 @@ use std::convert::From;
 use std::error::Error;
 use std::ffi::CString;
 use std::fmt;
-use std::mem::uninitialized;
+use std::mem::MaybeUninit;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::str::FromStr;
 
@@ -73,9 +73,11 @@ impl Mpq {
     }
 
     pub fn new() -> Mpq {
+        let mut mpq = MaybeUninit::uninit();
         unsafe {
-            let mut mpq = uninitialized();
-            __gmpq_init(&mut mpq);
+            __gmpq_init(mpq.as_mut_ptr());
+            let mpq = mpq.assume_init();
+
             Mpq { mpq }
         }
     }

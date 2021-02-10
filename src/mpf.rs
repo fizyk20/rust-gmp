@@ -8,7 +8,7 @@ use std;
 use std::cmp;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::ffi::CString;
-use std::mem::uninitialized;
+use std::mem::MaybeUninit;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::string::String;
 
@@ -90,9 +90,10 @@ impl Mpf {
     }
 
     pub fn new(precision: usize) -> Mpf {
+        let mut mpf = MaybeUninit::uninit();
         unsafe {
-            let mut mpf = uninitialized();
-            __gmpf_init2(&mut mpf, precision as c_ulong);
+            __gmpf_init2(mpf.as_mut_ptr(), precision as c_ulong);
+            let mpf = mpf.assume_init();
             Mpf { mpf }
         }
     }
@@ -216,9 +217,10 @@ impl Mpf {
 
 impl Clone for Mpf {
     fn clone(&self) -> Mpf {
+        let mut mpf = MaybeUninit::uninit();
         unsafe {
-            let mut mpf = uninitialized();
-            __gmpf_init_set(&mut mpf, &self.mpf);
+            __gmpf_init_set(mpf.as_mut_ptr(), &self.mpf);
+            let mpf = mpf.assume_init();
             Mpf { mpf }
         }
     }

@@ -1,6 +1,7 @@
+use std::mem::MaybeUninit;
+
 use super::mpz::{mp_bitcnt_t, mpz_ptr, mpz_srcptr, mpz_struct, Mpz};
 use libc::{c_int, c_ulong, c_void};
-use std::mem::uninitialized;
 
 #[repr(C)]
 pub struct gmp_randstate_struct {
@@ -45,33 +46,45 @@ impl Drop for RandState {
 
 impl RandState {
     pub fn new() -> RandState {
+        let mut state = MaybeUninit::uninit();
         unsafe {
-            let mut state: gmp_randstate_struct = uninitialized();
-            __gmp_randinit_default(&mut state);
+            __gmp_randinit_default(state.as_mut_ptr());
+            let state = state.assume_init();
+
             RandState { state }
         }
     }
 
     pub fn new_mt() -> RandState {
+        let mut state = MaybeUninit::uninit();
         unsafe {
-            let mut state: gmp_randstate_struct = uninitialized();
-            __gmp_randinit_mt(&mut state);
+            __gmp_randinit_mt(state.as_mut_ptr());
+            let state = state.assume_init();
+
             RandState { state }
         }
     }
 
     pub fn new_lc_2exp(a: Mpz, c: u64, m2exp: u64) -> RandState {
+        let mut state = MaybeUninit::uninit();
         unsafe {
-            let mut state: gmp_randstate_struct = uninitialized();
-            __gmp_randinit_lc_2exp(&mut state, a.inner(), c as c_ulong, m2exp as c_ulong);
+            __gmp_randinit_lc_2exp(
+                state.as_mut_ptr(),
+                a.inner(),
+                c as c_ulong,
+                m2exp as c_ulong,
+            );
+            let state = state.assume_init();
+
             RandState { state }
         }
     }
 
     pub fn new_lc_2exp_size(size: u64) -> RandState {
+        let mut state = MaybeUninit::uninit();
         unsafe {
-            let mut state: gmp_randstate_struct = uninitialized();
-            __gmp_randinit_lc_2exp_size(&mut state, size as c_ulong);
+            __gmp_randinit_lc_2exp_size(state.as_mut_ptr(), size as c_ulong);
+            let state = state.assume_init();
             RandState { state }
         }
     }
@@ -105,9 +118,11 @@ impl RandState {
 
 impl Clone for RandState {
     fn clone(&self) -> RandState {
+        let mut state = MaybeUninit::uninit();
         unsafe {
-            let mut state: gmp_randstate_struct = uninitialized();
-            __gmp_randinit_set(&mut state, &self.state);
+            __gmp_randinit_set(state.as_mut_ptr(), &self.state);
+            let state = state.assume_init();
+
             RandState { state }
         }
     }
