@@ -2,7 +2,7 @@ use super::rand::gmp_randstate_t;
 use super::sign::Sign;
 use libc::{c_char, c_double, c_int, c_long, c_ulong, c_void, size_t};
 use num_traits::{One, Zero};
-use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::cmp::Ordering;
 use std::convert::From;
 use std::error::Error;
 use std::ffi::CString;
@@ -444,13 +444,10 @@ impl Mpz {
     }
 
     pub fn sign(&self) -> Sign {
-        let size = self.mpz._mp_size;
-        if size == 0 {
-            Sign::Zero
-        } else if size > 0 {
-            Sign::Positive
-        } else {
-            Sign::Negative
+        match self.mpz._mp_size.cmp(&0) {
+            Ordering::Less => Sign::Negative,
+            Ordering::Equal => Sign::Zero,
+            Ordering::Greater => Sign::Positive,
         }
     }
 
@@ -509,13 +506,7 @@ impl PartialEq for Mpz {
 impl Ord for Mpz {
     fn cmp(&self, other: &Mpz) -> Ordering {
         let cmp = unsafe { __gmpz_cmp(&self.mpz, &other.mpz) };
-        if cmp == 0 {
-            Equal
-        } else if cmp < 0 {
-            Less
-        } else {
-            Greater
-        }
+        cmp.cmp(&0)
     }
 }
 

@@ -6,7 +6,7 @@ use libc::{c_char, c_double, c_int, c_long, c_ulong, c_void, free};
 use num_traits::{One, Zero};
 use std;
 use std::cmp;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::cmp::Ordering;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -204,13 +204,10 @@ impl Mpf {
     }
 
     pub fn sign(&self) -> Sign {
-        let size = self.mpf._mp_size;
-        if size == 0 {
-            Sign::Zero
-        } else if size > 0 {
-            Sign::Positive
-        } else {
-            Sign::Negative
+        match self.mpf._mp_size.cmp(&0) {
+            Ordering::Less => Sign::Negative,
+            Ordering::Equal => Sign::Zero,
+            Ordering::Greater => Sign::Positive,
         }
     }
 }
@@ -236,13 +233,7 @@ impl PartialEq for Mpf {
 impl Ord for Mpf {
     fn cmp(&self, other: &Mpf) -> Ordering {
         let cmp = unsafe { __gmpf_cmp(&self.mpf, &other.mpf) };
-        if cmp == 0 {
-            Equal
-        } else if cmp > 0 {
-            Greater
-        } else {
-            Less
-        }
+        cmp.cmp(&0)
     }
 }
 

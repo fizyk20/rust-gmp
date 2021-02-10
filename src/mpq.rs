@@ -4,7 +4,7 @@ use super::sign::Sign;
 use ffi::*;
 use libc::{c_char, c_double, c_int, c_ulong};
 use num_traits::{One, Zero};
-use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::cmp::Ordering;
 use std::convert::From;
 use std::error::Error;
 use std::ffi::CString;
@@ -227,13 +227,7 @@ impl PartialEq for Mpq {
 impl Ord for Mpq {
     fn cmp(&self, other: &Mpq) -> Ordering {
         let cmp = unsafe { __gmpq_cmp(&self.mpq, &other.mpq) };
-        if cmp == 0 {
-            Equal
-        } else if cmp < 0 {
-            Less
-        } else {
-            Greater
-        }
+        cmp.cmp(&0)
     }
 }
 impl PartialOrd for Mpq {
