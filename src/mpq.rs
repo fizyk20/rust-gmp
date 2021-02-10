@@ -1,22 +1,22 @@
-use super::mpz::{mpz_struct, Mpz, mpz_ptr, mpz_srcptr};
-use super::mpf::{Mpf, mpf_srcptr};
+use super::mpf::{mpf_srcptr, Mpf};
+use super::mpz::{mpz_ptr, mpz_srcptr, mpz_struct, Mpz};
 use super::sign::Sign;
 use ffi::*;
 use libc::{c_char, c_double, c_int, c_ulong};
-use std::ffi::CString;
-use std::str::FromStr;
-use std::error::Error;
+use num_traits::{One, Zero};
+use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::convert::From;
-use std::mem::uninitialized;
+use std::error::Error;
+use std::ffi::CString;
 use std::fmt;
-use std::cmp::Ordering::{self, Greater, Less, Equal};
-use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
-use num_traits::{Zero, One};
+use std::mem::uninitialized;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::str::FromStr;
 
 #[repr(C)]
 pub struct mpq_struct {
     _mp_num: mpz_struct,
-    _mp_den: mpz_struct
+    _mp_den: mpz_struct,
 }
 
 pub type mpq_srcptr = *const mpq_struct;
@@ -54,11 +54,13 @@ pub struct Mpq {
     mpq: mpq_struct,
 }
 
-unsafe impl Send for Mpq { }
-unsafe impl Sync for Mpq { }
+unsafe impl Send for Mpq {}
+unsafe impl Sync for Mpq {}
 
 impl Drop for Mpq {
-    fn drop(&mut self) { unsafe { __gmpq_clear(&mut self.mpq) } }
+    fn drop(&mut self) {
+        unsafe { __gmpq_clear(&mut self.mpq) }
+    }
 }
 
 impl Mpq {
@@ -184,7 +186,9 @@ impl Mpq {
         res
     }
 
-    pub fn zero() -> Mpq { Mpq::new() }
+    pub fn zero() -> Mpq {
+        Mpq::new()
+    }
     pub fn is_zero(&self) -> bool {
         unsafe { __gmpq_cmp_ui(&self.mpq, 0, 1) == 0 }
     }
@@ -192,7 +196,7 @@ impl Mpq {
 
 #[derive(Debug)]
 pub struct ParseMpqError {
-    _priv: ()
+    _priv: (),
 }
 
 impl fmt::Display for ParseMpqError {
@@ -219,7 +223,7 @@ impl Clone for Mpq {
     }
 }
 
-impl Eq for Mpq { }
+impl Eq for Mpq {}
 impl PartialEq for Mpq {
     fn eq(&self, other: &Mpq) -> bool {
         unsafe { __gmpq_equal(&self.mpq, &other.mpq) != 0 }
@@ -250,7 +254,7 @@ macro_rules! div_guard {
             panic!("divide by zero")
         }
     };
-    ($tr: ident, $what: expr) => {}
+    ($tr: ident, $what: expr) => {};
 }
 
 macro_rules! impl_oper {
@@ -312,7 +316,7 @@ macro_rules! impl_oper {
                 }
             }
         }
-    }
+    };
 }
 
 impl_oper!(Add, add, AddAssign, add_assign, __gmpq_add);
@@ -350,9 +354,7 @@ impl From<Mpq> for f64 {
 
 impl<'a> From<&'a Mpq> for f64 {
     fn from(other: &Mpq) -> f64 {
-        unsafe {
-            __gmpq_get_d(&other.mpq) as f64
-        }
+        unsafe { __gmpq_get_d(&other.mpq) as f64 }
     }
 }
 
@@ -400,7 +402,6 @@ impl FromStr for Mpq {
         Mpq::from_str_radix(s, 10)
     }
 }
-
 
 impl fmt::Debug for Mpq {
     /// Renders as `numer/denom`. If denom=1, renders as numer.

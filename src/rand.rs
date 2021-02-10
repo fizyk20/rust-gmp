@@ -1,12 +1,12 @@
+use super::mpz::{mp_bitcnt_t, mpz_ptr, mpz_srcptr, mpz_struct, Mpz};
 use libc::{c_int, c_ulong, c_void};
-use super::mpz::{mpz_struct, Mpz, mpz_ptr, mpz_srcptr, mp_bitcnt_t};
 use std::mem::uninitialized;
 
 #[repr(C)]
 pub struct gmp_randstate_struct {
     _mp_seed: mpz_struct,
     _mp_alg: c_int,
-    _mp_algdata: *const c_void
+    _mp_algdata: *const c_void,
 }
 
 pub type gmp_randstate_t = *mut gmp_randstate_struct;
@@ -15,7 +15,12 @@ pub type gmp_randstate_t = *mut gmp_randstate_struct;
 extern "C" {
     fn __gmp_randinit_default(state: gmp_randstate_t);
     fn __gmp_randinit_mt(state: gmp_randstate_t);
-    fn __gmp_randinit_lc_2exp(state: gmp_randstate_t, a: mpz_srcptr, c: c_ulong, m2exp: mp_bitcnt_t);
+    fn __gmp_randinit_lc_2exp(
+        state: gmp_randstate_t,
+        a: mpz_srcptr,
+        c: c_ulong,
+        m2exp: mp_bitcnt_t,
+    );
     fn __gmp_randinit_lc_2exp_size(state: gmp_randstate_t, size: mp_bitcnt_t);
     fn __gmp_randinit_set(state: gmp_randstate_t, op: *const gmp_randstate_struct);
     fn __gmp_randclear(state: gmp_randstate_t);
@@ -29,8 +34,8 @@ pub struct RandState {
     state: gmp_randstate_struct,
 }
 
-unsafe impl Send for RandState { }
-unsafe impl Sync for RandState { }
+unsafe impl Send for RandState {}
+unsafe impl Sync for RandState {}
 
 impl Drop for RandState {
     fn drop(&mut self) {

@@ -1,16 +1,16 @@
-use libc::{c_double, c_int, c_long, c_ulong, c_void,c_char, free};
-use std;
-use std::mem::uninitialized;
-use std::cmp;
-use std::cmp::Ordering::{self, Greater, Less, Equal};
-use std::ops::{Div, DivAssign, Mul, MulAssign, Add, AddAssign, Sub, SubAssign, Neg};
-use std::ffi::CString;
-use std::string::String;
+use super::mpq::{mpq_srcptr, Mpq};
 use super::mpz::mp_bitcnt_t;
-use super::mpz::{Mpz, mpz_srcptr};
-use super::mpq::{Mpq, mpq_srcptr};
+use super::mpz::{mpz_srcptr, Mpz};
 use super::sign::Sign;
-use num_traits::{Zero, One};
+use libc::{c_char, c_double, c_int, c_long, c_ulong, c_void, free};
+use num_traits::{One, Zero};
+use std;
+use std::cmp;
+use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::ffi::CString;
+use std::mem::uninitialized;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::string::String;
 
 type mp_exp_t = c_long;
 
@@ -19,7 +19,7 @@ pub struct mpf_struct {
     _mp_prec: c_int,
     _mp_size: c_int,
     _mp_exp: mp_exp_t,
-    _mp_d: *mut c_void
+    _mp_d: *mut c_void,
 }
 
 pub type mpf_srcptr = *const mpf_struct;
@@ -38,7 +38,13 @@ extern "C" {
 
     fn __gmpf_set_str(rop: mpf_ptr, str: *const c_char, base: c_int);
     fn __gmpf_set_si(rop: mpf_ptr, op: c_long);
-    fn __gmpf_get_str(str: *const c_char, expptr: *const mp_exp_t, base: i32, n_digits: i32, op: mpf_ptr) -> *mut c_char;
+    fn __gmpf_get_str(
+        str: *const c_char,
+        expptr: *const mp_exp_t,
+        base: i32,
+        n_digits: i32,
+        op: mpf_ptr,
+    ) -> *mut c_char;
 
     fn __gmpf_cmp(op1: mpf_srcptr, op2: mpf_srcptr) -> c_int;
     fn __gmpf_cmp_d(op1: mpf_srcptr, op2: c_double) -> c_int;
@@ -61,11 +67,13 @@ pub struct Mpf {
     mpf: mpf_struct,
 }
 
-unsafe impl Send for Mpf { }
-unsafe impl Sync for Mpf { }
+unsafe impl Send for Mpf {}
+unsafe impl Sync for Mpf {}
 
 impl Drop for Mpf {
-    fn drop(&mut self) { unsafe { __gmpf_clear(&mut self.mpf) } }
+    fn drop(&mut self) {
+        unsafe { __gmpf_clear(&mut self.mpf) }
+    }
 }
 
 impl Mpf {
@@ -77,7 +85,9 @@ impl Mpf {
         &mut self.mpf
     }
 
-    pub fn zero() -> Mpf { Mpf::new(32) }
+    pub fn zero() -> Mpf {
+        Mpf::new(32)
+    }
 
     pub fn new(precision: usize) -> Mpf {
         unsafe {
@@ -107,29 +117,35 @@ impl Mpf {
         unsafe { __gmpf_set_prec(&mut self.mpf, precision as c_ulong) }
     }
 
-    pub fn set_from_str(&mut self, string: &str, base: i32){
+    pub fn set_from_str(&mut self, string: &str, base: i32) {
         let c_str = CString::new(string).unwrap();
         unsafe {
             __gmpf_set_str(&mut self.mpf, c_str.as_ptr(), base as c_int);
         }
     }
 
-    pub fn set_from_si(&mut self, int: i64){
-        unsafe{
-            __gmpf_set_si(&mut self.mpf,int as c_long);
+    pub fn set_from_si(&mut self, int: i64) {
+        unsafe {
+            __gmpf_set_si(&mut self.mpf, int as c_long);
         }
     }
 
-    pub fn get_str(&mut self, n_digits: i32, base: i32, exp: &mut c_long) -> String{
-	let out;
-        unsafe{
-            out = CString::from_raw(__gmpf_get_str(std::ptr::null(), exp, base, n_digits, &mut self.mpf));
+    pub fn get_str(&mut self, n_digits: i32, base: i32, exp: &mut c_long) -> String {
+        let out;
+        unsafe {
+            out = CString::from_raw(__gmpf_get_str(
+                std::ptr::null(),
+                exp,
+                base,
+                n_digits,
+                &mut self.mpf,
+            ));
         }
         let r = out.to_str().unwrap().to_string();
-	// Free the pointer returned to us, as r already took a copy of the data inside of it
-	// Stops memory leaking
-	unsafe { free(out.into_raw() as _) };
-	r
+        // Free the pointer returned to us, as r already took a copy of the data inside of it
+        // Stops memory leaking
+        unsafe { free(out.into_raw() as _) };
+        r
     }
 
     pub fn abs(&self) -> Mpf {
@@ -173,7 +189,7 @@ impl Mpf {
     }
 
     pub fn sqrt(self) -> Mpf {
-        let mut retval:Mpf;
+        let mut retval: Mpf;
         unsafe {
             retval = Mpf::new(__gmpf_get_prec(&self.mpf) as usize);
             retval.set_from_si(0);
@@ -208,7 +224,7 @@ impl Clone for Mpf {
     }
 }
 
-impl Eq for Mpf { }
+impl Eq for Mpf {}
 impl PartialEq for Mpf {
     fn eq(&self, other: &Mpf) -> bool {
         unsafe { __gmpf_cmp(&self.mpf, &other.mpf) == 0 }
@@ -240,7 +256,7 @@ macro_rules! div_guard {
             panic!("divide by zero")
         }
     };
-    ($tr: ident, $what: expr) => {}
+    ($tr: ident, $what: expr) => {};
 }
 
 macro_rules! impl_oper {
@@ -298,14 +314,13 @@ macro_rules! impl_oper {
                 }
             }
         }
-    }
+    };
 }
 
 impl_oper!(Add, add, AddAssign, add_assign, __gmpf_add);
 impl_oper!(Sub, sub, SubAssign, sub_assign, __gmpf_sub);
 impl_oper!(Mul, mul, MulAssign, mul_assign, __gmpf_mul);
 impl_oper!(Div, div, DivAssign, div_assign, __gmpf_div);
-
 
 impl<'b> Neg for &'b Mpf {
     type Output = Mpf;
@@ -337,9 +352,7 @@ impl Zero for Mpf {
 
     #[inline]
     fn is_zero(&self) -> bool {
-        unsafe {
-            __gmpf_cmp_ui(&self.mpf, 0) == 0
-        }
+        unsafe { __gmpf_cmp_ui(&self.mpf, 0) == 0 }
     }
 }
 
