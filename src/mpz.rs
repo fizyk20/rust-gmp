@@ -205,7 +205,7 @@ impl Mpz {
         unsafe { __gmpz_set(&mut self.mpz, &other.mpz) }
     }
 
-    // TODO: too easy to forget to check this return value - rename?
+    #[must_use]
     pub fn set_from_str_radix(&mut self, s: &str, base: u8) -> bool {
         assert!(base == 0 || (base >= 2 && base <= 62));
         let s = CString::new(s.to_string()).unwrap();
