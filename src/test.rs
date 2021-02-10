@@ -99,7 +99,7 @@ mod mpz {
     fn test_div_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -107,7 +107,7 @@ mod mpz {
     fn test_rem_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x % y;
+        let _ = x % y;
     }
 
     #[test]
@@ -612,7 +612,7 @@ mod mpq {
     fn test_div_zero() {
         let x: Mpq = From::<i64>::from(1);
         let y = Mpq::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -710,7 +710,7 @@ mod mpf {
     #[should_panic]
     fn test_div_zero() {
         let x = Mpf::new(0);
-        &x / &x;
+        let _ = &x / &x;
     }
 
     #[test]
