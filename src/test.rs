@@ -314,7 +314,7 @@ mod mpz {
 
     #[test]
     fn test_popcount() {
-        Mpz::from_str_radix("1010010011", 2).unwrap().popcount() == 5;
+        assert_eq!(Mpz::from_str_radix("1010010011", 2).unwrap().popcount(), 5);
     }
 
     #[test]
