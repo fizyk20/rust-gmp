@@ -1,6 +1,6 @@
 use super::mpz::mp_limb_t;
-use std;
 use libc::c_int;
+use std;
 
 #[link(name = "gmp")]
 extern "C" {
@@ -10,20 +10,21 @@ extern "C" {
 #[test]
 fn test_limb_size() {
     // We are assuming that the limb size is the same as the pointer size.
-    assert_eq!(std::mem::size_of::<mp_limb_t>() * 8,
-               unsafe { __gmp_bits_per_limb as usize });
+    assert_eq!(std::mem::size_of::<mp_limb_t>() * 8, unsafe {
+        __gmp_bits_per_limb as usize
+    });
 }
 
 mod mpz {
     use super::super::mpz::Mpz;
     use super::super::mpz::ProbabPrimeResult;
     use super::super::sign::Sign;
-    use std::str::FromStr;
     use std::convert::{From, Into};
+    use std::str::FromStr;
     use std::{i64, u64};
 
-    use std::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
 
     #[test]
     fn test_set() {
@@ -81,6 +82,7 @@ mod mpz {
         assert!(y != z);
     }
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     fn test_ord() {
         let x: Mpz = FromStr::from_str("40000000000000000000000").unwrap();
@@ -98,7 +100,7 @@ mod mpz {
     fn test_div_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -106,7 +108,7 @@ mod mpz {
     fn test_rem_zero() {
         let x: Mpz = From::<i64>::from(1);
         let y = Mpz::new();
-        x % y;
+        let _ = x % y;
     }
 
     #[test]
@@ -126,47 +128,47 @@ mod mpz {
         assert!((&x % -&y).to_string() == (20i32 % -3).to_string());
         assert!((-&x % &y).to_string() == (-20i32 % 3).to_string());
     }
-    
+
     #[test]
     fn test_add() {
-    	let x: Mpz = From::<i64>::from(2);
-    	let y: Mpz = From::<i64>::from(3);
-    	let str5 = 5i32.to_string();
-    	assert!((&x + &y).to_string() == str5);
-    	assert!((&x + 3).to_string() == str5);
-    	assert!((&y + 2).to_string() == str5);
+        let x: Mpz = From::<i64>::from(2);
+        let y: Mpz = From::<i64>::from(3);
+        let str5 = 5i32.to_string();
+        assert!((&x + &y).to_string() == str5);
+        assert!((&x + 3).to_string() == str5);
+        assert!((&y + 2).to_string() == str5);
     }
-    
+
     #[test]
     fn test_sub() {
-    	let x: Mpz = From::<i64>::from(2);
-    	let y: Mpz = From::<i64>::from(3);
-    	assert!((&x - &y).to_string() == (-1i32).to_string());
-    	assert!((&y - &x).to_string() == 1i32.to_string());
-    	assert!((&y - 8).to_string() == (-5i32).to_string());
+        let x: Mpz = From::<i64>::from(2);
+        let y: Mpz = From::<i64>::from(3);
+        assert!((&x - &y).to_string() == (-1i32).to_string());
+        assert!((&y - &x).to_string() == 1i32.to_string());
+        assert!((&y - 8).to_string() == (-5i32).to_string());
     }
-    
+
     #[test]
     fn test_mul() {
-    	let x: Mpz = From::<i64>::from(2);
-    	let y: Mpz = From::<i64>::from(3);
-    	assert!((&x * &y).to_string() == 6i32.to_string());
-    	assert!((&x * 3i64).to_string() == 6i32.to_string());
-    	assert!((&y * -5i64).to_string() == (-15i32).to_string());
-    	// check with values not fitting in 32 bits
-    	assert!((&x * 5000000000i64).to_string() == 10000000000i64.to_string());
+        let x: Mpz = From::<i64>::from(2);
+        let y: Mpz = From::<i64>::from(3);
+        assert!((&x * &y).to_string() == 6i32.to_string());
+        assert!((&x * 3i64).to_string() == 6i32.to_string());
+        assert!((&y * -5i64).to_string() == (-15i32).to_string());
+        // check with values not fitting in 32 bits
+        assert!((&x * 5000000000i64).to_string() == 10000000000i64.to_string());
     }
 
     #[test]
     fn test_to_str_radix() {
         let x: Mpz = From::<i64>::from(255);
-        assert!(x.to_str_radix(16) == "ff".to_string());
+        assert_eq!(x.to_str_radix(16), "ff");
     }
 
     #[test]
     fn test_to_string() {
         let x: Mpz = FromStr::from_str("1234567890").unwrap();
-        assert!(x.to_string() == "1234567890".to_string());
+        assert_eq!(x.to_string(), "1234567890");
     }
 
     #[test]
@@ -187,15 +189,15 @@ mod mpz {
     #[test]
     fn test_from_int() {
         let x: Mpz = From::<i64>::from(150);
-        assert!(x.to_string() == "150".to_string());
+        assert_eq!(x.to_string(), "150");
         assert!(x == FromStr::from_str("150").unwrap());
     }
 
     #[test]
     fn test_from_slice_u8() {
-        let v: Vec<u8> = vec!(255, 255);
+        let v: Vec<u8> = vec![255, 255];
         let x: Mpz = From::from(&v[..]);
-        assert!(x.to_string() == "65535".to_string());
+        assert_eq!(x.to_string(), "65535");
     }
 
     #[test]
@@ -313,7 +315,7 @@ mod mpz {
 
     #[test]
     fn test_popcount() {
-        Mpz::from_str_radix("1010010011", 2).unwrap().popcount() == 5;
+        assert_eq!(Mpz::from_str_radix("1010010011", 2).unwrap().popcount(), 5);
     }
 
     #[test]
@@ -335,7 +337,7 @@ mod mpz {
     fn test_probab_prime() {
         let prime: Mpz = From::<i64>::from(2);
         assert!(prime.probab_prime(15) == ProbabPrimeResult::Prime);
-        
+
         let not_prime: Mpz = From::<i64>::from(4);
         assert!(not_prime.probab_prime(15) == ProbabPrimeResult::NotPrime);
     }
@@ -366,7 +368,7 @@ mod mpz {
         let twentyfour: Mpz = From::<i64>::from(24);
         let (g, s, t) = eighteen.gcdext(&twentyfour);
         assert!(g == six);
-        assert!(g == s*eighteen + t*twentyfour);
+        assert!(g == s * eighteen + t * twentyfour);
     }
 
     #[test]
@@ -424,14 +426,15 @@ mod mpz {
         assert!(onea == oneb);
     }
 
+    #[allow(clippy::needless_range_loop)] // Range loop is cleaner.
     #[test]
     fn test_bit_fiddling() {
         let mut xs: Mpz = From::<i64>::from(0b1010_1000_0010_0011);
         assert!(xs.bit_length() == 16);
-        let mut ys = [true, false, true, false,
-                      true, false, false, false,
-                      false, false, true, false,
-                      false, false, true, true];
+        let mut ys = [
+            true, false, true, false, true, false, false, false, false, false, true, false, false,
+            false, true, true,
+        ];
         ys.reverse();
         for i in 0..xs.bit_length() {
             assert!(xs.tstbit(i) == ys[i]);
@@ -473,7 +476,7 @@ mod mpz {
         let one: Mpz = From::<i64>::from(1);
         let two = &one + &one;
 
-        let hash = |x : &Mpz| {
+        let hash = |x: &Mpz| {
             let mut hasher = DefaultHasher::new();
             x.hash(&mut hasher);
             hasher.finish()
@@ -483,15 +486,14 @@ mod mpz {
         assert_eq!(hash(&one), hash(&(&two - &one)));
     }
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     fn test_hash_long() {
-        let a = Mpz::from_str_radix("348917329847193287498312749187234192387", 10)
-                .unwrap();
-        let b = Mpz::from_str_radix("348917329847193287498312749187234192386", 10)
-                .unwrap();
+        let a = Mpz::from_str_radix("348917329847193287498312749187234192387", 10).unwrap();
+        let b = Mpz::from_str_radix("348917329847193287498312749187234192386", 10).unwrap();
         let one: Mpz = From::<i64>::from(1);
 
-        let hash = |x : &Mpz| {
+        let hash = |x: &Mpz| {
             let mut hasher = DefaultHasher::new();
             x.hash(&mut hasher);
             hasher.finish()
@@ -518,7 +520,10 @@ mod mpz {
         assert_eq!(Into::<Vec<u8>>::into(&one), vec!(1u8));
         assert_eq!(Into::<Vec<u8>>::into(&five), vec!(5u8));
         assert_eq!(Into::<Vec<u8>>::into(&xffff), vec!(255u8, 255u8));
-        assert_eq!(Into::<Vec<u8>>::into(&max_u64), vec!(255u8, 255u8, 255u8, 255u8, 255u8, 255u8, 255u8, 255u8));
+        assert_eq!(
+            Into::<Vec<u8>>::into(&max_u64),
+            vec!(255u8, 255u8, 255u8, 255u8, 255u8, 255u8, 255u8, 255u8)
+        );
     }
 
     #[test]
@@ -573,9 +578,9 @@ mod mpz {
 }
 
 mod rand {
-    use std::convert::From;
     use super::super::mpz::Mpz;
     use super::super::rand::RandState;
+    use std::convert::From;
 
     #[test]
     fn test_randstate() {
@@ -591,11 +596,11 @@ mod rand {
 }
 
 mod mpq {
-    use std::convert::From;
-    use std::u64;
     use super::super::mpq::Mpq;
     use super::super::mpz::Mpz;
     use super::super::sign::Sign;
+    use std::convert::From;
+    use std::u64;
 
     #[test]
     fn test_one() {
@@ -609,7 +614,7 @@ mod mpq {
     fn test_div_zero() {
         let x: Mpq = From::<i64>::from(1);
         let y = Mpq::new();
-        x / y;
+        let _ = x / y;
     }
 
     #[test]
@@ -684,9 +689,18 @@ mod mpq {
         let minus_one = -&one;
         let two = &one + &one;
 
-        assert_eq!(Mpq::from_str_radix("1/-1", 10).unwrap(), Mpq::ratio(&minus_one, &one));
-        assert_eq!(Mpq::from_str_radix("0/2", 10).unwrap(), Mpq::ratio(&zero, &one));
-        assert_eq!(Mpq::from_str_radix("2/4", 10).unwrap(), Mpq::ratio(&one, &two));
+        assert_eq!(
+            Mpq::from_str_radix("1/-1", 10).unwrap(),
+            Mpq::ratio(&minus_one, &one)
+        );
+        assert_eq!(
+            Mpq::from_str_radix("0/2", 10).unwrap(),
+            Mpq::ratio(&zero, &one)
+        );
+        assert_eq!(
+            Mpq::from_str_radix("2/4", 10).unwrap(),
+            Mpq::ratio(&one, &two)
+        );
     }
 }
 
@@ -694,11 +708,12 @@ mod mpf {
     use super::super::mpf::Mpf;
     use super::super::sign::Sign;
 
+    #[allow(clippy::eq_op)] // We are testing the operator implementation.
     #[test]
     #[should_panic]
     fn test_div_zero() {
         let x = Mpf::new(0);
-        &x / &x;
+        let _ = &x / &x;
     }
 
     #[test]
