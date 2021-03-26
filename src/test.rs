@@ -25,6 +25,9 @@ mod mpz {
     use std::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
 
+    #[cfg(feature="serde")]
+    use serde_json;
+
     #[test]
     fn test_set() {
         let mut x: Mpz = From::<i64>::from(1000);
@@ -569,6 +572,17 @@ mod mpz {
         assert_eq!(zero.sign(), Sign::Zero);
         assert_eq!(five.sign(), Sign::Positive);
         assert_eq!(minus_five.sign(), Sign::Negative);
+    }
+
+    #[cfg(feature="serde")]
+    #[test]
+    fn test_serde() {
+        let one: Mpz = From::<i64>::from(1);
+        assert_eq!(serde_json::to_string(&one).unwrap(), "\"1\"");
+
+        let s_one = "\"1\"";
+        let o_one : Mpz = serde_json::from_str(&s_one).unwrap();
+        assert_eq!(o_one, one);
     }
 }
 

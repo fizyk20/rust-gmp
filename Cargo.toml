@@ -1,16 +1,27 @@
 [package]
 name = "rust-gmp"
-version = "0.5.0"
+version = "0.5.1"
 authors = [ "thestinger <danielmicay@gmail.com>", "Bartłomiej Kamiński <fizyk20@gmail.com>" ]
 description = "Rust bindings for GMP"
-repository = "https://github.com/fizyk20/rust-gmp"
-documentation = "https://docs.rs/rust-gmp"
+repository = "https://github.com/ZenGo-X/rust-gmp"
+documentation = "https://docs.rs/rust-gmp-kzen"
 license = "MIT"
 keywords = [ "gmp", "multi", "precision", "arithmetic", "bignum" ]
 
 [lib]
 name = "gmp"
 
+[features]
+default = []
+
+# Feature for enabling de/serialization of Mpz
+serde_support = ["serde"]
+
 [dependencies]
 libc = "~0.2"
-num-traits = "0.1"
+num-traits = "0.2"
+
+serde = { version = "1.0", optional = true, features = ["derive"] }
+
+[dev-dependencies]
+serde_json = { version = "1.0" }

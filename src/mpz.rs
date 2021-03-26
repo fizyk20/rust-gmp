@@ -12,6 +12,15 @@ use std::ffi::CString;
 use std::{u32, i32};
 use num_traits::{Zero, One};
 
+#[cfg(feature="serde")]
+use serde::ser::{Serialize, Serializer};
+#[cfg(feature="serde")]
+use serde::de::{Visitor};
+#[cfg(feature="serde")]
+use serde::de;
+#[cfg(feature="serde")]
+use serde::{Deserialize, Deserializer};
+
 use ffi::*;
 
 #[repr(C)]
@@ -36,6 +45,7 @@ extern "C" {
     fn __gmpz_init_set_str(rop: mpz_ptr, s: *const c_char, base: c_int) -> c_int;
     fn __gmpz_clear(x: mpz_ptr);
     fn __gmpz_realloc2(x: mpz_ptr, n: mp_bitcnt_t);
+    fn __gmpz_size(x: mpz_ptr) -> c_int;
     fn __gmpz_set(rop: mpz_ptr, op: mpz_srcptr);
     fn __gmpz_set_str(rop: mpz_ptr, s: *const c_char, base: c_int) -> c_int;
     fn __gmpz_get_str(s: *mut c_char, base: c_int, op: mpz_srcptr) -> *mut c_char;
@@ -101,11 +111,74 @@ pub struct Mpz {
     mpz: mpz_struct,
 }
 
+#[cfg(feature="serde")]
+const HEX_RADIX : u8 = 16;
+
+#[cfg(feature="serde")]
+impl Serialize for Mpz {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        serializer.serialize_str(&self.to_str_radix(HEX_RADIX))
+    }
+}
+
+#[cfg(feature="serde")]
+struct MpzVisitor;
+
+#[cfg(feature="serde")]
+impl<'de> Deserialize<'de> for Mpz {
+    fn deserialize<D>(deserializer: D) -> Result<Mpz, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(MpzVisitor)
+    }
+}
+
+#[cfg(feature="serde")]
+impl<'de> Visitor<'de> for MpzVisitor {
+    type Value = Mpz;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("BigInt")
+    }
+
+    fn visit_str<E: de::Error>(self, s: &str) -> Result<Mpz, E> {
+       Ok(Mpz::from_str_radix(s, HEX_RADIX).expect("Failed in serde"))
+    }
+}
+
 unsafe impl Send for Mpz { }
 unsafe impl Sync for Mpz { }
-
+use std::sync::atomic;
 impl Drop for Mpz {
-    fn drop(&mut self) { unsafe { __gmpz_clear(&mut self.mpz) } }
+    fn drop(&mut self) {
+        unsafe {
+            let size_limbs = __gmpz_size(&mut self.mpz);
+            let dst = self.mpz._mp_d as *mut c_int;
+            for i in 0..size_limbs{
+                /*
+                 * A note on safety of this:
+                 * 
+                 *   1. In gmp source the mp_limb_t is defined as unsigned long so c_int will never 
+                 *      be more than that on any platform.
+                 *
+                 *   2. Memory for the array(_mp_d) is guaranteed to be allocated by gmp in limb sizes.
+                 *      So we can be sure that we are not writing what we should not.
+                 *
+                 *    Also I think we should be having something in the gmp library itself to do this kind of a thing.
+                 *    The process for that is in flight. If that is accepted we can use that here.
+                */
+                std::ptr::write_volatile(dst.add(i as usize) as *mut c_int, 0);
+            }
+            __gmpz_clear(&mut self.mpz);
+        }
+
+        atomic::fence(atomic::Ordering::SeqCst);
+        atomic::compiler_fence(atomic::Ordering::SeqCst);
+    }
 }
 
 /// The result of running probab_prime
@@ -1016,4 +1089,3 @@ impl One for Mpz {
         Mpz::one()
     }
 }
-
